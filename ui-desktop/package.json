@@ -1,0 +1,27 @@
+{
+  "name": "rincode-desktop",
+  "version": "0.1.0",
+  "description": "RinCode native macOS desktop application host and bridge",
+  "private": true,
+  "main": "dist/electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "electron .",
+    "test": "node --test electron/tests/*.test.mjs",
+    "package:mac": "node scripts/package-mac.mjs"
+  },
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "electron": "^44.3.0",
+    "esbuild": "~0.25.0",
+    "typescript": "^5.7.0"
+  }
+}
