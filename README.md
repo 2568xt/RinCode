@@ -2,7 +2,7 @@
 
 **在项目里读代码、改文件、运行测试。** RinCode 是通过自然语言协作的编码 Agent，提供黑白桌面界面与终端界面，让任务、工具执行和可继续的对话留在同一处。
 
-[快速开始](#快速开始) · [桌面运行](#桌面运行) · [开发与验证](#开发与验证) · [上游与许可](#上游与许可)
+[快速开始](#快速开始) · [桌面运行](#桌面运行) · [开发与验证](#开发与验证)
 
 ![RinCode 桌面：项目会话树、对话与 Markdown 表格](docs/desktop/screenshot.png)
 
@@ -84,9 +84,3 @@ uv run python -m benchmarks.rincodebench --mode smoke
 ```
 
 RinBench 根据文件产物、工具回执和回归结果验收任务，并记录用量与耗时。评测方法见 [RinBench 文档](benchmarks/rincodebench/README.md)；桌面真实模型验证见 [桌面文档](ui-desktop/README.md#开发验证)。真实模型任务与验证会使用你配置的服务，并可能产生 API 费用。
-
-## 上游与许可
-
-RinCode 基于 [htxoffical 维护的上游运行时](https://gitee.com/htxoffical/pico-harness)继续开发，由 [2568xt](https://github.com/2568xt)维护本仓库。项目与上游运行时采用 [Apache-2.0](LICENSE)，保留原有作者署名与版权声明。
-
-基础运行时包含 [nanobot](https://github.com/HKUDS/nanobot) 的 MIT 许可代码；终端界面来自 [hermes-agent](https://github.com/NousResearch/hermes-agent)，包含其 `@hermes/ink` 及上游 [Ink](https://github.com/vadimdemedes/ink)，相应部分保留 MIT 许可。PinchBench 任务与夹具也保留原有 MIT 许可。完整来源、适用范围及许可文本见 [NOTICES.md](NOTICES.md) 和 [LICENSES](LICENSES/)。

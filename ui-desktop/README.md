@@ -99,4 +99,4 @@ npm --prefix ui-desktop run test:models
 
 桌面界面连接本机 Python 后端，项目目录决定该后端的工作目录；这本身不构成文件系统沙箱。删除对话、移除项目的确认，以及 Agent 的交互提问各自有明确用途，不能据此认为所有危险工具执行都会经过通用审批。
 
-上游署名与各层许可见 [项目说明](../README.md#上游与许可) 和 [NOTICES.md](../NOTICES.md)。
+许可与第三方通知见 [LICENSE](../LICENSE) 和 [NOTICES.md](../NOTICES.md)。
