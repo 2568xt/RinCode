@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Project, SessionListItem } from '../types';
 import {
+  ChevronDownIcon,
   FolderIcon,
   LogoIcon,
   MessageSquareIcon,
@@ -55,71 +56,49 @@ export function Sidebar({
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-brand">
-          <LogoIcon size={20} color="var(--accent)" />
+          <LogoIcon size={19} color="var(--accent)" />
           <span>RinCode</span>
           <span className="sidebar-brand-badge">Desktop</span>
         </div>
 
         <div className="project-section">
           {projects.length > 0 ? (
-            <div style={{ position: 'relative' }}>
+            <div className="project-selector-wrapper">
               <button
                 type="button"
                 className="project-selector"
                 onClick={() => !isBusy && setShowProjectMenu((prev) => !prev)}
                 disabled={isBusy}
                 title={isBusy ? busyTitle : (activeProject?.path || '')}
+                aria-haspopup="listbox"
+                aria-expanded={showProjectMenu}
               >
                 <div className="project-info">
-                  <FolderIcon size={15} color="var(--accent)" />
+                  <FolderIcon size={14} color="var(--accent)" />
                   <span className="project-name">
                     {activeProject?.name || '选择项目...'}
                   </span>
                 </div>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>▼</span>
+                <ChevronDownIcon
+                  size={13}
+                  className={`project-selector-chevron ${showProjectMenu ? 'open' : ''}`}
+                />
               </button>
 
               {showProjectMenu && !isBusy && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    marginTop: 4,
-                    backgroundColor: 'var(--bg-surface)',
-                    border: '1px solid var(--border-strong)',
-                    borderRadius: 'var(--radius-md)',
-                    boxShadow: 'var(--shadow-md)',
-                    zIndex: 20,
-                    maxHeight: 200,
-                    overflowY: 'auto',
-                  }}
-                >
+                <div className="project-dropdown-menu">
                   {projects.map((p) => (
                     <button
                       key={p.id}
                       type="button"
+                      className={`project-dropdown-item ${p.id === activeProject?.id ? 'active' : ''}`}
                       onClick={() => {
                         onSelectProject(p);
                         setShowProjectMenu(false);
                       }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        width: '100%',
-                        padding: '8px 10px',
-                        fontSize: 12,
-                        textAlign: 'left',
-                        backgroundColor: p.id === activeProject?.id ? 'var(--bg-hover)' : 'transparent',
-                        color: 'var(--text-primary)',
-                      }}
                     >
-                      <FolderIcon size={14} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {p.name}
-                      </span>
+                      <FolderIcon size={13} />
+                      <span className="project-dropdown-name">{p.name}</span>
                     </button>
                   ))}
                 </div>
@@ -202,6 +181,7 @@ export function Sidebar({
                   }}
                   disabled={isBusy}
                   title={isBusy ? busyTitle : '删除此会话'}
+                  aria-label="删除此会话"
                 >
                   <TrashIcon size={14} />
                 </button>

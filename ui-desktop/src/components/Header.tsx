@@ -26,6 +26,7 @@ export function Header({
           className="sidebar-toggle-btn"
           onClick={onToggleSidebar}
           title={sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'}
+          aria-label={sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'}
         >
           <SidebarToggleIcon size={18} />
         </button>

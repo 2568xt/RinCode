@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Project } from '../types';
-import { SparklesIcon } from '../icons';
+import { FolderIcon, SparklesIcon } from '../icons';
 
 interface EmptyStateProps {
   project: Project | null;
@@ -35,15 +35,22 @@ export function EmptyState({ project, onSelectPrompt, disabled }: EmptyStateProp
   return (
     <div className="empty-state-card">
       <div className="empty-state-icon">
-        <SparklesIcon size={28} />
+        <SparklesIcon size={26} />
       </div>
-      <h2 className="empty-state-title">
-        {project ? `已就绪：${project.name}` : '欢迎使用 RinCode Desktop'}
-      </h2>
+      <div className="empty-state-eyebrow">YOUR NEXT IDEA</div>
+      <h2 className="empty-state-title">从一个想法开始，把事情做成。</h2>
       <p className="empty-state-desc">
-        {project
-          ? `当前工作区：${project.path}。可以在下方直接提问，或选择快捷指令开始对话。`
-          : '请在左侧侧边栏选择或添加项目，即可开启独立的工程智能助手。'}
+        {project ? (
+          <>
+            <span className="empty-state-project-tag" title={project.path}>
+              <FolderIcon size={12} />
+              <span>{project.name}</span>
+            </span>
+            <span>已就绪。在下方输入问题，或选择快捷指令开始对话。</span>
+          </>
+        ) : (
+          '在左侧侧边栏选择或添加本地项目，即可开启独立的工程智能助手。'
+        )}
       </p>
 
       {project && (
