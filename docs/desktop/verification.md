@@ -35,3 +35,9 @@ CLI 来自官方发布清单并校验 SHA512。未使用独立 Gemini CLI 或 Ge
 - 打包窗口中切换到第二个临时项目后会话列表为空，隔离正确；关闭后未发现桌面后端进程残留。
 - 主源码执行保存的 `npm --prefix ui-desktop run test:e2e` 再次通过，覆盖全新项目自动创建首会话；结果与截图在 `ui-desktop/out/verification/`。
 - 本机依赖使用 `npm ci` 独立安装，运行不依赖模块工作树；Python 仍复用本机源码和虚拟环境，非跨机器分发安装包。
+
+## 界面打磨与 README 截图
+
+暖色主题、侧栏、项目选择器、输入框和欢迎页已打磨；完成后的思考内容默认收起。修正 Markdown 列表分段后的编号，真实历史会话验证为 1、2、3。类型检查、构建和 macOS 打包通过，已重新打开应用包确认新版欢迎页。
+
+界面改动由 Antigravity Gemini 在 `codex/desktop-polish` 起草，协调者完成集成检查。`docs/desktop/screenshot.png` 为真实模型读取 README 文档副本后生成回复的实际应用截图，已经加入项目 README 与桌面使用说明。

@@ -25,7 +25,11 @@ rincode run -m "阅读这个项目，解释任务执行流程"
 
 ## 桌面界面（macOS 首版）
 
-独立桌面应用提供项目与会话侧栏、聊天流、工具执行记录和操作确认，连接同一 RinCode 后端。已安装 Python 依赖后运行：
+桌面界面支持项目切换、历史会话、流式回复、工具执行记录和操作确认。
+
+![RinCode 桌面界面](docs/desktop/screenshot.png)
+
+已安装项目的 Python 依赖后，启动桌面界面：
 
 ```bash
 npm --prefix ui-desktop ci

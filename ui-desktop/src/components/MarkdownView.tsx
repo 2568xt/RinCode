@@ -101,7 +101,7 @@ export function MarkdownView({ content }: MarkdownViewProps) {
   let inCodeBlock = false;
   let codeLanguage = '';
   let codeBuffer: string[] = [];
-  let currentList: { type: 'ul' | 'ol'; items: string[] } | null = null;
+  let currentList: { type: 'ul' | 'ol'; items: string[]; start?: number } | null = null;
 
   const flushList = () => {
     if (!currentList) return;
@@ -115,7 +115,7 @@ export function MarkdownView({ content }: MarkdownViewProps) {
       );
     } else {
       elements.push(
-        <ol key={`list-${elements.length}`}>
+        <ol key={`list-${elements.length}`} start={currentList.start}>
           {currentList.items.map((item, idx) => (
             <li key={idx}>{renderInline(item)}</li>
           ))}
@@ -167,13 +167,13 @@ export function MarkdownView({ content }: MarkdownViewProps) {
     }
 
     // Ordered list
-    const olMatch = line.match(/^(\s*)\d+\.\s+(.*)$/);
+    const olMatch = line.match(/^(\s*)(\d+)\.\s+(.*)$/);
     if (olMatch) {
       if (!currentList || currentList.type !== 'ol') {
         flushList();
-        currentList = { type: 'ol', items: [] };
+        currentList = { type: 'ol', items: [], start: Number(olMatch[2]) };
       }
-      currentList.items.push(olMatch[2]);
+      currentList.items.push(olMatch[3]);
       continue;
     }
 

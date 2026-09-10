@@ -1,6 +1,8 @@
 # RinCode Desktop
 
-独立 Electron 桌面首版：项目目录选择、会话侧栏、聊天流、工具执行记录、停止生成、删除会话确认，以及 Agent 的交互提问。连接现有 RinCode Python 后端和模型配置。
+独立 Electron 桌面首版：项目目录选择、会话侧栏、聊天流、工具执行记录、停止生成、删除会话确认，以及 Agent 的交互提问。使用项目已配置的模型服务。
+
+![RinCode 桌面界面](../docs/desktop/screenshot.png)
 
 ## 本机运行
 
@@ -21,7 +23,7 @@ npm --prefix ui-desktop run package:mac
 open ui-desktop/out/RinCode-darwin-arm64/RinCode.app
 ```
 
-打包结果位于 `ui-desktop/out/RinCode-darwin-<架构>/RinCode.app`。这是本机首版，应用包记录本机源码目录并复用其中的 Python 环境，尚未将 Python 和依赖封装为可分发安装包；移动源码后应重新打包。未配置新的模型凭据，也未替换现有 TUI。
+打包结果位于 `ui-desktop/out/RinCode-darwin-<架构>/RinCode.app`。当前 `.app` 已可在这台 Mac 上直接打开。Python 依赖还没有一起打进应用包，因此首次在其他电脑使用时，需要先安装本项目的 Python 依赖，再打包应用。应用包会记录构建时的项目位置；移动项目目录后请重新打包。
 
 ## 验证
 
