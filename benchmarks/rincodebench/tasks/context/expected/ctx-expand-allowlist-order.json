@@ -1,0 +1,7 @@
+{
+  "match_field": "service_name",
+  "ordering": "declared order",
+  "policy": "DEMO-POLICY-06",
+  "allowlist": ["checkout", "billing"],
+  "owner": "platform-lab"
+}

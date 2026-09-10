@@ -1,0 +1,7 @@
+{
+  "mfa": "required",
+  "audit_trail": "preserved",
+  "request_id": "DEMO-ACCESS-02",
+  "status": "approved",
+  "reviewer": "identity-lab"
+}

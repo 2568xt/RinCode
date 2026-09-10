@@ -1,0 +1,7 @@
+{
+  "evaluation_key": "tenant_id",
+  "exposure_cap": "100 percent",
+  "service": "DEMO-CHECKOUT",
+  "canary_percent": 100,
+  "owner": "release-lab"
+}

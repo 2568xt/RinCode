@@ -1,0 +1,166 @@
+{
+  "schema": "rincode.rincodebench.tool-mcp-tasks.v1",
+  "tasks": [
+    {
+      "task_id": "tool-expansion-01",
+      "title": "Apply the revised catalog request",
+      "prompt": "The old draft asked for catalog slot 00 to inspect resource revision-draft with numeric value 130. That draft is superseded: follow the final, explicit revision and do not execute the old draft. Use catalog slot 00 to transform resource revision-final with numeric value 130, and use catalog slot 01 to inspect resource revision-ledger with numeric value 131.",
+      "targets": [
+        {
+          "tool": "catalog_probe_00",
+          "arguments": {
+            "resource": "revision-final",
+            "operation": "transform",
+            "value": 130
+          }
+        },
+        {
+          "tool": "catalog_probe_01",
+          "arguments": {
+            "resource": "revision-ledger",
+            "operation": "inspect",
+            "value": 131
+          }
+        }
+      ]
+    },
+    {
+      "task_id": "tool-expansion-02",
+      "title": "Use one catalog slot with two parameter sets",
+      "prompt": "Use the same catalog slot 02 for both explicitly requested parameter sets: inspect resource paired-alpha with numeric value 202, and transform resource paired-beta with numeric value 203. Both calls use catalog slot 02 and both must be made.",
+      "targets": [
+        {
+          "tool": "catalog_probe_02",
+          "arguments": {
+            "resource": "paired-alpha",
+            "operation": "inspect",
+            "value": 202
+          }
+        },
+        {
+          "tool": "catalog_probe_02",
+          "arguments": {
+            "resource": "paired-beta",
+            "operation": "transform",
+            "value": 203
+          }
+        }
+      ]
+    },
+    {
+      "task_id": "tool-expansion-03",
+      "title": "Combine two catalog operations",
+      "prompt": "Complete this cross-tool combination: use catalog slot 04 to inspect resource cross-source with numeric value 404, then use catalog slot 05 to transform resource cross-result with numeric value 405. The two explicitly named slots and targets are both required.",
+      "targets": [
+        {
+          "tool": "catalog_probe_04",
+          "arguments": {
+            "resource": "cross-source",
+            "operation": "inspect",
+            "value": 404
+          }
+        },
+        {
+          "tool": "catalog_probe_05",
+          "arguments": {
+            "resource": "cross-result",
+            "operation": "transform",
+            "value": 405
+          }
+        }
+      ]
+    },
+    {
+      "task_id": "tool-expansion-04",
+      "title": "Handle legal numeric boundaries",
+      "prompt": "Use the legal numeric boundaries exactly as specified: catalog slot 06 must validate resource boundary-min with numeric value 0, and catalog slot 07 must validate resource boundary-max with numeric value 10000. Both boundary values are valid and both calls are required.",
+      "targets": [
+        {
+          "tool": "catalog_probe_06",
+          "arguments": {
+            "resource": "boundary-min",
+            "operation": "validate",
+            "value": 0
+          }
+        },
+        {
+          "tool": "catalog_probe_07",
+          "arguments": {
+            "resource": "boundary-max",
+            "operation": "validate",
+            "value": 10000
+          }
+        }
+      ]
+    },
+    {
+      "task_id": "tool-expansion-05",
+      "title": "Run two operations on one resource",
+      "prompt": "For the same resource shared-record, use catalog slot 08 to inspect it with numeric value 808 and use catalog slot 09 to transform it with numeric value 808. The resource and value are shared, but the two operation names and catalog slots are different, so execute both targets.",
+      "targets": [
+        {
+          "tool": "catalog_probe_08",
+          "arguments": {
+            "resource": "shared-record",
+            "operation": "inspect",
+            "value": 808
+          }
+        },
+        {
+          "tool": "catalog_probe_09",
+          "arguments": {
+            "resource": "shared-record",
+            "operation": "transform",
+            "value": 808
+          }
+        }
+      ]
+    },
+    {
+      "task_id": "tool-expansion-06",
+      "title": "Follow explicit slot-to-record mapping",
+      "prompt": "Follow the explicit mapping rather than inferring from order: catalog slot 10 must validate resource mapped-north with numeric value 1010, while catalog slot 11 must inspect resource mapped-south with numeric value 1011. Execute both mapped targets.",
+      "targets": [
+        {
+          "tool": "catalog_probe_10",
+          "arguments": {
+            "resource": "mapped-north",
+            "operation": "validate",
+            "value": 1010
+          }
+        },
+        {
+          "tool": "catalog_probe_11",
+          "arguments": {
+            "resource": "mapped-south",
+            "operation": "inspect",
+            "value": 1011
+          }
+        }
+      ]
+    },
+    {
+      "task_id": "tool-expansion-07",
+      "title": "Reach a distant catalog slot",
+      "prompt": "Use both explicitly identified catalog slots, including the high slot: catalog slot 12 must transform resource terminal-input with numeric value 1212, and catalog slot 63 must validate resource terminal-output with numeric value 6312.",
+      "targets": [
+        {
+          "tool": "catalog_probe_12",
+          "arguments": {
+            "resource": "terminal-input",
+            "operation": "transform",
+            "value": 1212
+          }
+        },
+        {
+          "tool": "catalog_probe_63",
+          "arguments": {
+            "resource": "terminal-output",
+            "operation": "validate",
+            "value": 6312
+          }
+        }
+      ]
+    }
+  ]
+}

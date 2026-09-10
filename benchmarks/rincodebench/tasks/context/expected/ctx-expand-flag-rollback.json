@@ -1,0 +1,7 @@
+{
+  "evaluation_key": "account_id",
+  "state_format": "lowercase",
+  "flag": "DEMO-FLAG-05",
+  "rollout_state": "disabled",
+  "owner": "growth-lab"
+}

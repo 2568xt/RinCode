@@ -1,0 +1,8 @@
+{
+  "region": "eu-west-1",
+  "timezone": "UTC",
+  "redaction": "customer_email",
+  "export_id": "DEMO-EXP-01",
+  "mode": "incremental",
+  "owner": "privacy-lab"
+}

@@ -1,0 +1,7 @@
+{
+  "date_format": "ISO-8601",
+  "deletion": "disabled",
+  "dataset": "DEMO-DATA-07",
+  "retention_days": 1,
+  "owner": "archive-lab"
+}
