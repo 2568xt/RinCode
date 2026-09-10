@@ -23,7 +23,15 @@ CLI 来自官方发布清单并校验 SHA512。未使用独立 Gemini CLI 或 Ge
 - TypeScript 类型检查与 esbuild 构建通过。
 - 真实后端模型：当前配置 deepseek/deepseek-v4-flash，成功调用 read_file 读取独立测试项目 README 标记 RINCODE_GUI_REAL_TOOL_20260910，收到 message.complete。
 - 真实 Electron 窗口：首条消息读取工具、连续第二轮、新会话、跨会话历史恢复、删除确认拒绝与同意、停止生成通过；没有 renderer console/page error。截图已人工查看。
-- 集成工作树的 TUI 回归有 2 项因未复制忽略的 ui-tui/dist 产物失败，50 项通过；最终在含原有产物的主源码目录再验证。
+- 主源码最终 Python/TUI 合并回归：52 项全部通过；结合宿主 21 项，共 73 项。集成工作树首次有 2 项因缺少忽略的 ui-tui/dist 产物失败，主源码验证已解决此环境差异。
 - 首版沿用后端删除确认与 ask_user，没有增加通用危险工具审批、文件差异面板或终端面板。
 
 模块提交：host 33c910f、python 2b2158f、renderer b464c32。集成修复包括异步会话状态、中文输入法回车、IPC 范围、日志与连接清理。原模块分支保留以供追溯。
+
+## 本机交付
+
+- `ui-desktop/out/RinCode-darwin-arm64/RinCode.app` 已生成并直接启动验证，Electron 44.3.0、Packager 20.3.0。
+- 应用包未设置 RINCODE_PYTHON / RINCODE_SOURCE_ROOT 覆盖也能定位主源码 `.venv`，完成真实 ask_user 提问、用户回答和后续回复。
+- 打包窗口中切换到第二个临时项目后会话列表为空，隔离正确；关闭后未发现桌面后端进程残留。
+- 主源码执行保存的 `npm --prefix ui-desktop run test:e2e` 再次通过，覆盖全新项目自动创建首会话；结果与截图在 `ui-desktop/out/verification/`。
+- 本机依赖使用 `npm ci` 独立安装，运行不依赖模块工作树；Python 仍复用本机源码和虚拟环境，非跨机器分发安装包。

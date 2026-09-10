@@ -1,19 +1,94 @@
 // Opt-in: uses the configured real model and a temporary project. Only the directory chooser is stubbed.
-const {_electron:electron}=require('playwright');const fs=require('fs');const assert=require('assert/strict');
-const path=require('node:path'); const os=require('node:os');
-const root=path.resolve(__dirname,'../..');
-const qa=fs.mkdtempSync(path.join(os.tmpdir(),'rincode-desktop-verify-'));
-const project=path.join(qa,'project');fs.mkdirSync(project);fs.writeFileSync(path.join(project,'README.md'),'Marker: RINCODE_GUI_REAL_TOOL_20260910\n');
-const output=path.join(root,'ui-desktop/out/verification');fs.mkdirSync(output,{recursive:true});
-(async()=>{const app=await electron.launch({executablePath:root+'/ui-desktop/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron',args:[root+'/ui-desktop','--user-data-dir='+path.join(qa,'user-data')],env:{...process.env,RINCODE_PYTHON:process.env.RINCODE_PYTHON || path.join(root,'.venv/bin/python')}});const report=[];const errors=[];
-try{const p=await app.firstWindow();p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error')errors.push(m.text())});await p.locator('textarea').waitFor();await app.evaluate(({dialog},selected)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[selected]})},project);await p.getByRole('button',{name:'添加本地项目'}).click();await p.waitForFunction(()=>!document.querySelector('textarea').disabled);await p.waitForTimeout(500);
-async function send(text){await p.locator('textarea').fill(text);await p.locator('textarea').press('Enter');await p.locator('.composer-stop-btn').waitFor({timeout:10000});await p.locator('.composer-stop-btn').waitFor({state:'hidden',timeout:90000});await p.waitForTimeout(200)}
-await send('请调用 read_file 读取 README.md，并回复 Marker 值。只读，不修改。');assert.match(await p.locator('.chat-scroll-area').innerText(),/RINCODE_GUI_REAL_TOOL_20260910/);report.push('GUI first send + real read_file passed');console.log(report.at(-1));await p.screenshot({path:path.join(output,'chat.png')});
-await send('只回复 SECOND_GUI_OK');assert.match(await p.locator('.chat-scroll-area').innerText(),/SECOND_GUI_OK/);report.push('second turn passed');console.log(report.at(-1));
-await p.getByRole('button',{name:'新建对话'}).click();await p.waitForTimeout(300);await send('只回复 SESSION_B_GUI_OK');report.push('new session after completion passed');console.log(report.at(-1));
-await p.locator('.session-item').nth(1).click();await p.waitForFunction(()=>document.querySelector('.chat-scroll-area')?.textContent.includes('SECOND_GUI_OK'));assert.doesNotMatch(await p.locator('.chat-scroll-area').innerText(),/SESSION_B_GUI_OK/);report.push('session history isolation/resume passed');console.log(report.at(-1));
-let n=await p.locator('.session-item').count();await p.locator('.session-item.active .session-delete-btn').click();await p.getByRole('button',{name:'取消',exact:true}).click();await p.locator('.modal-backdrop').waitFor({state:'hidden'});await p.waitForTimeout(200);assert.equal(await p.locator('.session-item').count(),n);report.push('real deletion confirmation rejection passed');
-await p.locator('.session-item.active .session-delete-btn').click();await p.getByRole('button',{name:'确认删除',exact:true}).click();await p.waitForFunction(expected=>document.querySelectorAll('.session-item').length===expected,n-1);report.push('real deletion confirmation acceptance passed');console.log(report.at(-1));
-await p.waitForFunction(()=>!document.querySelector('textarea').disabled);await p.locator('textarea').fill('请详细写一篇至少三千字的软件架构分析，不调用工具。');await p.locator('textarea').press('Enter');await p.locator('.composer-stop-btn').waitFor();await p.waitForTimeout(400);await p.locator('.composer-stop-btn').click();await p.locator('.composer-stop-btn').waitFor({state:'hidden',timeout:15000});report.push('cancel turn passed');console.log(report.at(-1));
-assert.deepEqual(errors,[]);report.push('no renderer console/page errors');fs.writeFileSync(path.join(output,'result.json'),JSON.stringify({report,errors},null,2));console.log(report);
-}catch(e){console.error(e);fs.writeFileSync(path.join(output,'result.json'),JSON.stringify({report,errors,failure:e.message},null,2));await(await app.firstWindow()).screenshot({path:path.join(output,'failure.png')});process.exitCode=1}finally{await app.close()}})();
+const { _electron: electron } = require('playwright')
+const fs = require('fs')
+const assert = require('assert/strict')
+const path = require('node:path')
+const os = require('node:os')
+const root = path.resolve(__dirname, '../..')
+const qa = fs.mkdtempSync(path.join(os.tmpdir(), 'rincode-desktop-verify-'))
+const project = path.join(qa, 'project')
+fs.mkdirSync(project)
+fs.writeFileSync(path.join(project, 'README.md'), 'Marker: RINCODE_GUI_REAL_TOOL_20260910\n')
+const output = path.join(root, 'ui-desktop/out/verification')
+fs.mkdirSync(output, { recursive: true })
+;(async () => {
+  const app = await electron.launch({
+    executablePath: root + '/ui-desktop/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron',
+    args: [root + '/ui-desktop', '--user-data-dir=' + path.join(qa, 'user-data')],
+    env: { ...process.env, RINCODE_PYTHON: process.env.RINCODE_PYTHON || path.join(root, '.venv/bin/python') }
+  })
+  const report = []
+  const errors = []
+  try {
+    const p = await app.firstWindow()
+    p.on('pageerror', e => errors.push(e.message))
+    p.on('console', m => {
+      if (m.type() === 'error') errors.push(m.text())
+    })
+    await p.locator('textarea').waitFor()
+    await app.evaluate(({ dialog }, selected) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [selected] })
+    }, project)
+    await p.getByRole('button', { name: '添加本地项目' }).click()
+    await p.waitForFunction(() => !document.querySelector('textarea').disabled)
+    await p.waitForTimeout(500)
+    async function send(text) {
+      await p.locator('textarea').fill(text)
+      await p.locator('textarea').press('Enter')
+      await p.locator('.composer-stop-btn').waitFor({ timeout: 10000 })
+      await p.locator('.composer-stop-btn').waitFor({ state: 'hidden', timeout: 90000 })
+      await p.waitForTimeout(200)
+    }
+    await send('请调用 read_file 读取 README.md，并回复 Marker 值。只读，不修改。')
+    assert.match(await p.locator('.chat-scroll-area').innerText(), /RINCODE_GUI_REAL_TOOL_20260910/)
+    report.push('GUI first send + real read_file passed')
+    console.log(report.at(-1))
+    await p.screenshot({ path: path.join(output, 'chat.png') })
+    await send('只回复 SECOND_GUI_OK')
+    assert.match(await p.locator('.chat-scroll-area').innerText(), /SECOND_GUI_OK/)
+    report.push('second turn passed')
+    console.log(report.at(-1))
+    await p.getByRole('button', { name: '新建对话' }).click()
+    await p.waitForTimeout(300)
+    await send('只回复 SESSION_B_GUI_OK')
+    report.push('new session after completion passed')
+    console.log(report.at(-1))
+    await p.locator('.session-item').nth(1).click()
+    await p.waitForFunction(() => document.querySelector('.chat-scroll-area')?.textContent.includes('SECOND_GUI_OK'))
+    assert.doesNotMatch(await p.locator('.chat-scroll-area').innerText(), /SESSION_B_GUI_OK/)
+    report.push('session history isolation/resume passed')
+    console.log(report.at(-1))
+    let n = await p.locator('.session-item').count()
+    await p.locator('.session-item.active .session-delete-btn').click()
+    await p.getByRole('button', { name: '取消', exact: true }).click()
+    await p.locator('.modal-backdrop').waitFor({ state: 'hidden' })
+    await p.waitForTimeout(200)
+    assert.equal(await p.locator('.session-item').count(), n)
+    report.push('real deletion confirmation rejection passed')
+    await p.locator('.session-item.active .session-delete-btn').click()
+    await p.getByRole('button', { name: '确认删除', exact: true }).click()
+    await p.waitForFunction(expected => document.querySelectorAll('.session-item').length === expected, n - 1)
+    report.push('real deletion confirmation acceptance passed')
+    console.log(report.at(-1))
+    await p.waitForFunction(() => !document.querySelector('textarea').disabled)
+    await p.locator('textarea').fill('请详细写一篇至少三千字的软件架构分析，不调用工具。')
+    await p.locator('textarea').press('Enter')
+    await p.locator('.composer-stop-btn').waitFor()
+    await p.waitForTimeout(400)
+    await p.locator('.composer-stop-btn').click()
+    await p.locator('.composer-stop-btn').waitFor({ state: 'hidden', timeout: 15000 })
+    report.push('cancel turn passed')
+    console.log(report.at(-1))
+    assert.deepEqual(errors, [])
+    report.push('no renderer console/page errors')
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ report, errors }, null, 2))
+    console.log(report)
+  } catch (e) {
+    console.error(e)
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ report, errors, failure: e.message }, null, 2))
+    await (await app.firstWindow()).screenshot({ path: path.join(output, 'failure.png') })
+    process.exitCode = 1
+  } finally {
+    await app.close()
+  }
+})()

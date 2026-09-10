@@ -14,7 +14,7 @@ console.log('[package:mac] Step 2: Packaging macOS application...');
 
 let packager;
 try {
-  packager = (await import('@electron/packager')).default || (await import('@electron/packager'));
+  ({ packager } = await import('@electron/packager'));
 } catch {
   console.error('[package:mac] @electron/packager is not installed yet. Run "npm install" first.');
   process.exit(1);

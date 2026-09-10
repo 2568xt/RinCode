@@ -23,6 +23,18 @@ rincode run -m "阅读这个项目，解释任务执行流程"
 
 安装后运行 `rincode` 进入交互式 TUI。TUI 使用 Node.js 22，安装器可在缺少适用版本时安装私有运行时。Windows 在源码目录执行 `./install.ps1`，然后使用同样的 `rincode` 命令。
 
+## 桌面界面（macOS 首版）
+
+独立桌面应用提供项目与会话侧栏、聊天流、工具执行记录和操作确认，连接同一 RinCode 后端。已安装 Python 依赖后运行：
+
+```bash
+npm --prefix ui-desktop ci
+npm --prefix ui-desktop run build
+npm --prefix ui-desktop start
+```
+
+需要 Node.js 22.12+。本机 `.app` 打包、运行条件和验证方法见 [桌面说明](ui-desktop/README.md)。
+
 ## 评估与验证
 
 RinBench 是评测系统的展示名称，Python 模块为 `benchmarks.rincodebench`，代码位于 `benchmarks/rincodebench`，包含上下文、工具/MCP 和记忆相关任务。基于产物和执行证据评分，模型的口头完成声明不作为通过依据。
@@ -51,6 +63,7 @@ uv run pytest -q tests/test_spine_scheduler_lane.py tests/test_maintenance_accep
 | `benchmarks` | 评估任务与执行器 |
 | `tests` | 回归测试 |
 | `ui-tui` | 终端界面 |
+| `ui-desktop` | 独立桌面界面 |
 
 ## 许可证与来源
 
