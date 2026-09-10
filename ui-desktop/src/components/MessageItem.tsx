@@ -41,7 +41,7 @@ export function MessageItem({ message }: MessageItemProps) {
     <div className="message-row assistant">
       <div className="assistant-content">
         <div className="assistant-header">
-          <LogoIcon size={16} color="var(--accent)" />
+          <LogoIcon size={16} className="assistant-logo" />
           <span>RinCode</span>
         </div>
 

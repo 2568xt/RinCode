@@ -30,17 +30,13 @@ export function ThinkingBlock({ thinking, isActive }: ThinkingBlockProps) {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
       >
-        <div className="thinking-title">
+        <span className="thinking-title">
           <BrainIcon size={14} />
           <span>思考过程</span>
-          {isActive ? (
+          {isActive && (
             <span className="thinking-badge-active">正在思考...</span>
-          ) : (
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              (点击{isOpen ? '收起' : '展开'})
-            </span>
           )}
-        </div>
+        </span>
         {isOpen ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
       </button>
       {isOpen && (

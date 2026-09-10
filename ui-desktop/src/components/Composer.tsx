@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SendIcon, StopIcon } from '../icons';
+import { FolderIcon, SendIcon, StopIcon } from '../icons';
+import type { Project } from '../types';
 
 interface ComposerProps {
   onSend: (text: string) => void;
@@ -8,6 +9,8 @@ interface ComposerProps {
   disabled: boolean;
   placeholder?: string;
   initialValue?: string;
+  project: Project | null;
+  modelPicker?: React.ReactNode;
 }
 
 export function Composer({
@@ -15,8 +18,10 @@ export function Composer({
   onCancel,
   isTurnRunning,
   disabled,
-  placeholder = '输入消息或指令... (Enter 发送, Shift+Enter 换行)',
+  placeholder = '描述你的想法，或交给 RinCode 一个任务…',
   initialValue = '',
+  project,
+  modelPicker,
 }: ComposerProps) {
   const [text, setText] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -83,14 +88,17 @@ export function Composer({
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={disabled ? '请先选择或连接项目...' : placeholder}
+          aria-label="消息或任务"
           disabled={disabled && !isTurnRunning}
           rows={1}
         />
         <div className="composer-footer">
-          <div className="composer-hint">
-            {isTurnRunning
-              ? '智能体正在思考与执行 · 按 Esc 停止'
-              : 'Enter 发送 · Shift+Enter 换行'}
+          <div className="composer-footer-left">
+            <div className="composer-context" title={project?.path}>
+              <FolderIcon size={14} />
+              <span>{project?.name || '尚未选择项目'}</span>
+            </div>
+            {modelPicker}
           </div>
           <div className="composer-actions">
             {isTurnRunning ? (
@@ -115,6 +123,9 @@ export function Composer({
             )}
           </div>
         </div>
+      </div>
+      <div className="composer-hint">
+        {isTurnRunning ? '正在处理你的任务 · Esc 停止' : 'Enter 发送 · Shift + Enter 换行'}
       </div>
     </div>
   );

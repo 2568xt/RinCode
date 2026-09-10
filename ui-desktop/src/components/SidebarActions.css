@@ -1,0 +1,54 @@
+.sidebar-action-nav {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sidebar-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.sidebar-action-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.project-remove-btn,
+.session-archive-btn {
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  padding: 5px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.workspace-project-row:hover .project-remove-btn,
+.workspace-project-row:focus-within .project-remove-btn,
+.session-item:hover .session-archive-btn,
+.session-item:focus-within .session-archive-btn {
+  opacity: 1;
+}
+
+.project-remove-btn:hover:not(:disabled),
+.session-archive-btn:hover:not(:disabled) {
+  color: #000;
+  background: #ddd;
+}

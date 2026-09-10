@@ -8,6 +8,9 @@ interface UseSessionsProps {
   isInteractionBlocked: () => boolean;
   onSessionResumed: (messages: ChatMessage[]) => void;
   onClearMessages: () => void;
+  preferredSessionId?: string | null;
+  historyReady?: boolean;
+  archivedSessionIds?: string[];
 }
 
 export function useSessions({
@@ -17,6 +20,9 @@ export function useSessions({
   isInteractionBlocked,
   onSessionResumed,
   onClearMessages,
+  preferredSessionId,
+  historyReady = true,
+  archivedSessionIds = [],
 }: UseSessionsProps) {
   const [sessions, setSessions] = useState<SessionListItem[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -38,6 +44,8 @@ export function useSessions({
   const resumeTokenRef = useRef(0);
 
   const prevProjectIdRef = useRef<string | null>(null);
+  const archivedIdsRef = useRef(archivedSessionIds);
+  archivedIdsRef.current = archivedSessionIds;
 
   // Clear project-specific state immediately when project changes
   useEffect(() => {
@@ -59,7 +67,7 @@ export function useSessions({
 
   // Load session list for active project only when backend is ready
   const loadSessions = useCallback(async (autoSelectFirst = false) => {
-    if (!activeProject || backendStatus?.state !== 'ready') {
+    if (!activeProject || backendStatus?.state !== 'ready' || !historyReady) {
       return;
     }
 
@@ -75,8 +83,9 @@ export function useSessions({
       list.sort((a, b) => (b.started_at || 0) - (a.started_at || 0));
       setSessions(list);
 
-      if (autoSelectFirst && list.length > 0) {
-        setActiveSessionId(list[0].id);
+      if (autoSelectFirst) {
+        setActiveSessionId(list.some(s => s.id === preferredSessionId) ? preferredSessionId!
+          : list.find(s => !archivedIdsRef.current.includes(s.id))?.id || null);
       }
     } catch (err: any) {
       if (currentToken === listTokenRef.current) {
@@ -89,7 +98,7 @@ export function useSessions({
         setLoading(false);
       }
     }
-  }, [activeProject, backendStatus?.state, rpc]);
+  }, [activeProject, backendStatus?.state, rpc, preferredSessionId, historyReady]);
 
   // Reload session list when project is ready
   useEffect(() => {
@@ -195,8 +204,9 @@ export function useSessions({
           setSessions((prev) => {
             const nextList = prev.filter((s) => s.id !== sessionId);
             if (activeSessionId === sessionId) {
-              if (nextList.length > 0) {
-                setActiveSessionId(nextList[0].id);
+              const nextSession = nextList.find(s => !archivedIdsRef.current.includes(s.id));
+              if (nextSession) {
+                setActiveSessionId(nextSession.id);
               } else {
                 setActiveSessionId(null);
                 onClearMessagesRef.current();
@@ -237,8 +247,8 @@ export function useSessions({
   const clearSessionError = useCallback(() => setSessionError(null), []);
 
   return {
-    sessions,
-    activeSessionId,
+    sessions: prevProjectIdRef.current === activeProject?.id ? sessions : [],
+    activeSessionId: prevProjectIdRef.current === activeProject?.id ? activeSessionId : null,
     sessionInfo,
     loading,
     sessionError,

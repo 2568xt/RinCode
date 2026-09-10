@@ -362,6 +362,8 @@ async def _run_rpc_server_until_done(
     auth_token: str,
     handshake_deadline_s: float,
     proc_done: asyncio.Event,
+    *,
+    desktop: bool = False,
 ) -> bool:
     """Run RpcServer until the child exits or we abort on handshake timeout.
 
@@ -587,6 +589,14 @@ async def _run_rpc_server_until_done(
             turn_ids=turn_ids,
             submission_ids=submission_ids,
         )
+        if desktop:
+            from rincode.cli.desktop_models import register_desktop_model_methods
+
+            register_desktop_model_methods(
+                dispatcher,
+                agent_loop_factory=_agent_loop_factory,
+                await_runtime_ready=_await_runtime_ready,
+            )
 
         from rincode.config.paths import get_logs_dir
 

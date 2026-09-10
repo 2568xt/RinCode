@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <title>RinCode application icon</title>
+  <rect x="80" y="80" width="864" height="864" rx="192" fill="#111111"/>
+  <g transform="translate(200 200) scale(26)">
+    <path fill="white" fill-rule="evenodd" d="M4 3h10l6 6-5 5 6 7h-6l-6-7v7H4V3Zm5 4v5h3l3-2.5L12 7H9Z"/>
+  </g>
+</svg>

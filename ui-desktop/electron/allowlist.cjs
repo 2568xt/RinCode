@@ -11,6 +11,7 @@ const RPC_METHOD_ALLOWLIST = new Set([
   'turn.send', 'turn.subscribe', 'turn.unsubscribe', 'turn.cancel',
   'system.hello', 'system.ping', 'system.version',
   'confirm.respond', 'clarify.respond',
+  'desktop.model.options', 'desktop.model.select',
 ]);
 
 /**

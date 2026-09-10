@@ -22,16 +22,18 @@ export function ToolCard({ tool }: ToolCardProps) {
 
   return (
     <div className="tool-card">
-      <div
+      <button
+        type="button"
         className={`tool-card-header ${expanded ? 'expanded' : ''}`}
-        onClick={() => hasDetails && setExpanded((prev) => !prev)}
-        style={{ cursor: hasDetails ? 'pointer' : 'default' }}
+        onClick={() => setExpanded((prev) => !prev)}
+        aria-expanded={expanded}
+        disabled={!hasDetails}
       >
-        <div className="tool-info-left">
-          <div className="tool-name-badge">
+        <span className="tool-info-left">
+          <span className="tool-name-badge">
             {isBash ? <TerminalIcon size={14} /> : <ToolIcon size={14} />}
             <span>{tool.name}</span>
-          </div>
+          </span>
 
           {tool.status === 'running' && (
             <span className="tool-status-pill running">
@@ -51,17 +53,14 @@ export function ToolCard({ tool }: ToolCardProps) {
               <span>失败</span>
             </span>
           )}
-        </div>
+        </span>
 
         {hasDetails && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              {expanded ? '收起详情' : '查看详情'}
-            </span>
+          <span className="tool-card-chevron" aria-hidden="true">
             {expanded ? <ChevronDownIcon size={14} /> : <ChevronRightIcon size={14} />}
-          </div>
+          </span>
         )}
-      </div>
+      </button>
 
       {expanded && hasDetails && (
         <div className="tool-card-body">
@@ -84,7 +83,7 @@ export function ToolCard({ tool }: ToolCardProps) {
           {tool.inlineDiff && (
             <div className="tool-detail-section">
               <span className="tool-detail-label">代码差异 (Diff)</span>
-              <pre className="tool-detail-box" style={{ color: '#15803d' }}>
+              <pre className="tool-detail-box" style={{ color: 'var(--text-secondary)' }}>
                 {tool.inlineDiff}
               </pre>
             </div>

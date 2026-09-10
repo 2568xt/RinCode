@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="480" viewBox="0 0 1600 480" fill="none">
+  <title>RinCode — A workspace for your code.</title>
+  <desc>Original geometric R mark with a terminal-arrow counter, in black and white. Desktop, terminal and a shared agent runtime.</desc>
+  <rect width="1600" height="480" rx="24" fill="#F7F7F7"/>
+  <path d="M1064 0V480M1244 0V480M1424 0V480M1000 120H1600M1000 300H1600" stroke="#E9E9E9"/>
+  <rect x="1064" y="120" width="360" height="180" fill="white"/>
+  <path d="M1072 120h-16m8-8v16m368 172h-16m8-8v16" stroke="#B5B5B5"/>
+  <g transform="translate(1147 115) scale(8)">
+    <path fill="#111111" fill-rule="evenodd" d="M4 3h10l6 6-5 5 6 7h-6l-6-7v7H4V3Zm5 4v5h3l3-2.5L12 7H9Z"/>
+  </g>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="80" y="104" fill="#757575" font-size="17" letter-spacing="3">DESKTOP / TERMINAL / AGENT</text>
+    <text x="73" y="239" fill="#111111" font-size="112" font-weight="650" letter-spacing="-6">RinCode<tspan fill="#999999">.</tspan></text>
+    <text x="80" y="306" fill="#4B4B4B" font-size="28" letter-spacing="-.3">A workspace for your code.</text>
+    <text x="80" y="405" fill="#757575" font-size="15" letter-spacing="1">OPEN SOURCE</text>
+    <path d="M233 400H286" stroke="#BDBDBD"/>
+    <text x="308" y="405" fill="#757575" font-size="15" letter-spacing="1">BUILT TO WORK WITH YOU</text>
+  </g>
+</svg>

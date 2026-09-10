@@ -1,74 +1,92 @@
-# RinCode
+![RinCode](docs/brand/banner.svg)
 
-通过自然语言指令完成编码与调试的 Coding Agent。RinCode 可以检索项目代码、修改文件、执行命令和运行测试，并根据工具反馈继续处理任务。
+**在项目里读代码、改文件、运行测试。** RinCode 是通过自然语言协作的编码 Agent，提供黑白桌面界面与终端界面，让任务、工具执行和可继续的对话留在同一处。
 
-- **工具协作**：文件、Shell、Web 与 MCP 工具共用执行接口，支持子 Agent 委托、参数校验、超时与错误反馈。
-- **上下文管理**：按 Token 预算装配任务约束和相关历史，保留工具调用与结果的对应关系，持久化会话。
-- **任务执行**：按会话串行运行，隔离前后台任务，支持取消、终态处理与 Trace 诊断。
-- **RinBench**：以可检查的文件产物、MCP 回执及独立回归测试验收任务，记录成功率、Token 用量与耗时。
+[快速开始](#快速开始) · [桌面运行](#桌面运行) · [开发与验证](#开发与验证) · [上游与许可](#上游与许可)
+
+![RinCode 桌面：项目会话树、对话与 Markdown 表格](docs/desktop/screenshot.png)
+
+<sub>当前桌面界面，使用独立演示项目与示例会话。原创标识与图标见 <a href="docs/brand/README.md">品牌资产</a>。</sub>
+
+<details>
+<summary>更多界面：开始任务、选择模型、搜索与归档</summary>
+
+<p>
+  <img src="docs/desktop/welcome.png" alt="居中的任务输入区" width="49%">
+  <img src="docs/desktop/model-picker.png" alt="按提供商分组的模型选择器" width="49%">
+</p>
+<p>
+  <img src="docs/desktop/conversation-search.png" alt="跨项目搜索会话标题与正文" width="49%">
+  <img src="docs/desktop/conversation-archive.png" alt="查看与恢复已归档对话" width="49%">
+</p>
+
+</details>
+
+## 可以做什么
+
+- **在真实项目中完成任务**：检索代码、编辑文件、执行命令与测试，根据工具结果继续处理；支持 Web、MCP 工具和子 Agent 协作。
+- **看清执行过程**：流式回复、可展开的思考与工具记录、随时停止生成；代码块与 Markdown 表格直接在对话中阅读。
+- **接着之前的工作**：按项目管理已发送并保存的对话，搜索标题与正文，归档后随时恢复。移除项目入口会保留本地文件与历史。
+- **使用自己的模型服务**：从已配置提供商的候选目录切换模型。桌面选择由当前项目的所有对话共用，重新连接后恢复配置默认。
 
 ## 快速开始
 
-需要 Python 3.12 和 [uv](https://docs.astral.sh/uv/)。
-
-源码仓库：[2568xt/RinCode](https://github.com/2568xt/RinCode)。在源码根目录执行安装器，它会构建所需的 TUI 产物并注册 `rincode` 命令：
+运行时使用 Python 3.12。macOS / Linux 在终端中执行：
 
 ```bash
+git clone https://github.com/2568xt/RinCode.git
+cd RinCode
 ./install.sh
-rincode onboard --skip-memory
-rincode run -m "阅读这个项目，解释任务执行流程"
 ```
 
-按引导配置自己的模型服务与 API Key。项目使用 `rincode` 命令、Python 包名及配置名，展示名称为 RinCode。首次引导及实际 Agent 任务会调用模型服务。 命名与接口变化见 [迁移说明](docs/onboarding/rincode-migration.md)。
+安装器会准备缺少的 `uv` 与 TUI 所需的 Node.js 22，构建终端界面，并注册 `rincode` 命令。Windows 在源码目录使用 PowerShell 执行 `./install.ps1`。
 
-安装后运行 `rincode` 进入交互式 TUI。TUI 使用 Node.js 22，安装器可在缺少适用版本时安装私有运行时。Windows 在源码目录执行 `./install.ps1`，然后使用同样的 `rincode` 命令。
-
-## 桌面界面（macOS 首版）
-
-桌面界面支持项目切换、历史会话、流式回复、工具执行记录和操作确认。
-
-![RinCode 桌面界面](docs/desktop/screenshot.png)
-
-已安装项目的 Python 依赖后，启动桌面界面：
+安装完成后重新打开终端，进入要处理的项目目录，按向导配置模型服务与 API Key：
 
 ```bash
+cd /path/to/your-project
+rincode onboard --skip-memory
+rincode
+```
+
+`rincode` 打开交互式终端界面；也可以用 `rincode run -m "阅读这个项目，解释任务执行流程"` 执行一次任务。首次引导会发起模型请求。当前不附带外部 Memory 实现，因此首次配置使用 `--skip-memory`；会话保存仍可正常使用。更多设置见 [首次使用指南](docs/onboarding/README.zh-CN.md)。
+
+## 桌面运行
+
+桌面版当前面向 macOS。准备好可在终端中使用的 Node.js 22.12+ 与 `npm`，完成上述模型配置后，在 **RinCode 源码根目录**运行：
+
+```bash
+uv sync --python 3.12
 npm --prefix ui-desktop ci
 npm --prefix ui-desktop run build
 npm --prefix ui-desktop start
 ```
 
-需要 Node.js 22.12+。本机 `.app` 打包、运行条件和验证方法见 [桌面说明](ui-desktop/README.md)。
+`uv sync` 创建桌面后端使用的 `.venv`；全局命令安装不会创建这个环境。打开应用后，点击“添加本地项目”选择工作目录，发送第一条消息即可开始。
 
-## 评估与验证
+可以构建本机 `.app`，它会记录源码路径，并使用本机 Python 环境；目前没有将 Python 与后端源码一起封装成可跨机独立安装的应用包。打包方法、模型范围及会话管理说明见 [桌面文档](ui-desktop/README.md)。
 
-RinBench 是评测系统的展示名称，Python 模块为 `benchmarks.rincodebench`，代码位于 `benchmarks/rincodebench`，包含上下文、工具/MCP 和记忆相关任务。基于产物和执行证据评分，模型的口头完成声明不作为通过依据。
+## 开发与验证
+
+在源码根目录准备开发依赖，再运行相关检查：
 
 ```bash
+uv sync --extra dev
+uv run pytest -q tests/test_spine_scheduler_lane.py tests/test_maintenance_acceptance.py
+
+# 桌面检查，需先完成上面的 npm ci
+npm --prefix ui-desktop run type-check
+npm --prefix ui-desktop test
+uv run pytest -q tests/test_desktop_server.py tests/test_desktop_models.py tests/test_desktop_history.py
+
 # 不调用模型的评估冒烟检查
 uv run python -m benchmarks.rincodebench --mode smoke
-
-# 任务生命周期与代码修复验收的回归检查
-uv run pytest -q tests/test_spine_scheduler_lane.py tests/test_maintenance_acceptance.py
 ```
 
-代码修复验收在独立副本中运行修复前后的测试，检查受保护文件和允许变更范围。小型修复任务夹具位于 `benchmarks/repair_business`；CLI 验收入口为 `rincode maintain accept --help`。
+RinBench 根据文件产物、工具回执和回归结果验收任务，并记录用量与耗时。评测方法见 [RinBench 文档](benchmarks/rincodebench/README.md)；桌面真实模型验证见 [桌面文档](ui-desktop/README.md#开发验证)。真实模型任务与验证会使用你配置的服务，并可能产生 API 费用。
 
-真实模型评估需要单独配置凭据与预算，会产生 API 费用。运行日志、账号配置和原始会话不随源码发布。详细评估说明见 [RinBench](benchmarks/rincodebench/README.md)。
+## 上游与许可
 
-## 项目结构
+RinCode 基于 [htxoffical 维护的上游运行时](https://gitee.com/htxoffical/pico-harness)继续开发，由 [2568xt](https://github.com/2568xt)维护本仓库。项目与上游运行时采用 [Apache-2.0](LICENSE)，保留原有作者署名与版权声明。
 
-| 路径 | 内容 |
-| --- | --- |
-| `rincode/agent` | Agent 循环与工具 |
-| `rincode/context_engine` | 上下文装配 |
-| `rincode/spine` | 调度与任务生命周期 |
-| `rincode/providers` | 模型服务适配 |
-| `rincode/maintenance` | 代码修复验收 |
-| `benchmarks` | 评估任务与执行器 |
-| `tests` | 回归测试 |
-| `ui-tui` | 终端界面 |
-| `ui-desktop` | 独立桌面界面 |
-
-## 许可证与来源
-
-采用 Apache-2.0，详见 [LICENSE](LICENSE)。上游作者署名、本仓库维护归属及第三方许可证保留于 [NOTICES.md](NOTICES.md) 和 [LICENSES](LICENSES/)。
+基础运行时包含 [nanobot](https://github.com/HKUDS/nanobot) 的 MIT 许可代码；终端界面来自 [hermes-agent](https://github.com/NousResearch/hermes-agent)，包含其 `@hermes/ink` 及上游 [Ink](https://github.com/vadimdemedes/ink)，相应部分保留 MIT 许可。PinchBench 任务与夹具也保留原有 MIT 许可。完整来源、适用范围及许可文本见 [NOTICES.md](NOTICES.md) 和 [LICENSES](LICENSES/)。

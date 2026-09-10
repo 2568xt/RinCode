@@ -5,6 +5,7 @@ export function useDesktopBridge() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [backendStatus, setBackendStatus] = useState<BackendStatus | null>(null);
+  const [statusProjectId, setStatusProjectId] = useState<string | null>(null);
   const [bridgeReady, setBridgeReady] = useState<boolean>(false);
   const [bridgeError, setBridgeError] = useState<string | null>(null);
 
@@ -42,6 +43,7 @@ export function useDesktopBridge() {
       // Filter backend.status by active project
       if (event.method === 'backend.status') {
         if (!activeProjectRef.current || event.projectId === activeProjectRef.current.id) {
+          setStatusProjectId(event.projectId);
           setBackendStatus(event.params as BackendStatus);
         }
       }
@@ -98,6 +100,7 @@ export function useDesktopBridge() {
     }
 
     let isCurrent = true;
+    setStatusProjectId(activeProject.id);
     setBackendStatus({ state: 'starting' });
     setBridgeError(null);
 
@@ -145,6 +148,15 @@ export function useDesktopBridge() {
   }, [getBridge, reloadProjects]);
 
   // Safe RPC caller
+  const removeProject = useCallback(async (project: Project) => {
+    const result = await getBridge()?.removeProject(project.id);
+    if (result?.removed) {
+      setProjects(result.projects);
+      setActiveProject(previous => previous?.id === project.id ? result.projects[0] || null : previous);
+    }
+    return result?.removed || false;
+  }, [getBridge]);
+
   const rpc = useCallback(
     async (projectId: string, method: string, params: Record<string, unknown> = {}) => {
       const bridge = getBridge();
@@ -162,11 +174,16 @@ export function useDesktopBridge() {
     projects,
     activeProject,
     setActiveProject,
-    backendStatus,
+    backendStatus: !activeProject
+      ? { state: 'stopped' as const }
+      : statusProjectId === activeProject.id
+      ? backendStatus
+      : { state: 'starting' as const },
     bridgeReady,
     bridgeError,
     clearBridgeError,
     addProject,
+    removeProject,
     rpc,
     addEventListener,
   };

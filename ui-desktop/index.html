@@ -7,31 +7,6 @@
   <title>RinCode</title>
   <link rel="stylesheet" href="./renderer/main.css">
   <style>
-    :root {
-      --bg-warm: #f7f6f3;
-      --text-main: #2b2a27;
-      --text-muted: #73726c;
-      --border-subtle: #e5e3dc;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background-color: var(--bg-warm);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      overflow: hidden;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    #root {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -43,11 +18,11 @@
     .loading-title {
       font-size: 16px;
       font-weight: 500;
-      color: var(--text-main);
+      color: var(--text-primary, #171717);
     }
     .loading-desc {
       font-size: 13px;
-      color: var(--text-muted);
+      color: var(--text-muted, #767676);
     }
   </style>
 </head>

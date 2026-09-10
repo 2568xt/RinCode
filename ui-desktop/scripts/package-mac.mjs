@@ -32,6 +32,7 @@ try {
     name: 'RinCode',
     platform: 'darwin',
     arch: process.arch,
+    icon: path.join(uiDesktopDir, 'assets', 'icon.icns'),
     out: outDir,
     overwrite: true,
     prune: true,

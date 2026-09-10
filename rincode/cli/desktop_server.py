@@ -272,6 +272,7 @@ async def run_desktop_server(
             token,
             handshake_deadline_s,
             proc_done,
+            desktop=True,
         )
         return 0 if handshake_ok else 1
     finally:

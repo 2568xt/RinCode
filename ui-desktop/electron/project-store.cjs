@@ -44,22 +44,16 @@ class ProjectStore {
    * @returns {Array<{ id: string, name: string, path: string }>}
    */
   loadProjects() {
-    try {
-      if (!fs.existsSync(this.storePath)) {
-        return [];
-      }
-      const content = fs.readFileSync(this.storePath, 'utf-8');
-      const data = JSON.parse(content);
-      if (Array.isArray(data)) {
-        return data;
-      }
-      if (data && Array.isArray(data.projects)) {
-        return data.projects;
-      }
-      return [];
-    } catch {
+    if (!fs.existsSync(this.storePath)) {
       return [];
     }
+    const data = JSON.parse(fs.readFileSync(this.storePath, 'utf-8'));
+    const projects = Array.isArray(data) ? data : data?.projects;
+    if (!Array.isArray(projects) || projects.some(p =>
+      !p || typeof p.id !== 'string' || typeof p.name !== 'string' || typeof p.path !== 'string')) {
+      throw new Error('项目列表存储已损坏，未修改原文件');
+    }
+    return projects;
   }
 
   /**
@@ -114,6 +108,14 @@ class ProjectStore {
   getProject(projectId) {
     const projects = this.loadProjects();
     return projects.find(p => p.id === projectId) || null;
+  }
+
+  /** Remove only the app registration; project files and history remain intact. */
+  removeProject(projectId) {
+    const projects = this.loadProjects();
+    const remaining = projects.filter(project => project.id !== projectId);
+    if (remaining.length !== projects.length) this.saveProjects(remaining);
+    return remaining;
   }
 }
 

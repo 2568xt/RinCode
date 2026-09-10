@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { CheckIcon, CopyIcon } from '../icons';
+import { parseTable } from '../utils/markdownTable';
+import './MarkdownView.css';
 
 interface MarkdownViewProps {
   content: string;
@@ -51,9 +53,9 @@ function CodeBlock({ code, language }: CodeBlockProps) {
 }
 
 function renderInline(text: string): React.ReactNode[] {
-  // Regex to split on code `...`, bold **...**, italic *...*
+  // Keep inline formatting shared between paragraphs and table cells.
   const parts: React.ReactNode[] = [];
-  const regex = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g;
+  const regex = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]\n]+\]\((?:[^\s()]+|\([^\s()]*\))+\))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -80,6 +82,17 @@ function renderInline(text: string): React.ReactNode[] {
           {token.slice(1, -1)}
         </em>
       );
+    } else if (token.startsWith('[')) {
+      const endLabel = token.indexOf('](');
+      const label = token.slice(1, endLabel);
+      const href = token.slice(endLabel + 2, -1);
+      let safe = false;
+      try {
+        safe = ['http:', 'https:', 'mailto:'].includes(new URL(href, 'https://rincode.invalid').protocol);
+      } catch { /* Invalid destinations remain readable text. */ }
+      parts.push(safe ? (
+        <a key={match.index} href={href} target="_blank" rel="noreferrer noopener">{renderInline(label)}</a>
+      ) : label);
     } else {
       parts.push(token);
     }
@@ -99,6 +112,7 @@ export function MarkdownView({ content }: MarkdownViewProps) {
   const lines = content.split('\n');
   const elements: React.ReactNode[] = [];
   let inCodeBlock = false;
+  let codeFence = '';
   let codeLanguage = '';
   let codeBuffer: string[] = [];
   let currentList: { type: 'ul' | 'ol'; items: string[]; start?: number } | null = null;
@@ -128,14 +142,9 @@ export function MarkdownView({ content }: MarkdownViewProps) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Check code fence
-    if (line.trim().startsWith('```')) {
-      if (!inCodeBlock) {
-        flushList();
-        inCodeBlock = true;
-        codeLanguage = line.trim().slice(3).trim();
-        codeBuffer = [];
-      } else {
+    const fence = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (inCodeBlock) {
+      if (fence && fence[1][0] === codeFence[0] && fence[1].length >= codeFence.length && !fence[2].trim()) {
         inCodeBlock = false;
         elements.push(
           <CodeBlock
@@ -146,12 +155,39 @@ export function MarkdownView({ content }: MarkdownViewProps) {
         );
         codeBuffer = [];
         codeLanguage = '';
+      } else {
+        codeBuffer.push(line);
       }
       continue;
     }
 
-    if (inCodeBlock) {
-      codeBuffer.push(line);
+    if (fence) {
+      flushList();
+      inCodeBlock = true;
+      codeFence = fence[1];
+      codeLanguage = fence[2].trim();
+      codeBuffer = [];
+      continue;
+    }
+
+    const table = parseTable(lines, i);
+    if (table) {
+      flushList();
+      elements.push(
+        <div key={`table-${elements.length}`} className="markdown-table-wrapper">
+          <table className="markdown-table">
+            <thead><tr>{table.headers.map((cell, column) => (
+              <th key={column} scope="col" style={{ textAlign: table.alignments[column] }}>{renderInline(cell)}</th>
+            ))}</tr></thead>
+            {table.rows.length > 0 && <tbody>{table.rows.map((row, rowIndex) => (
+              <tr key={rowIndex}>{row.map((cell, column) => (
+                <td key={column} style={{ textAlign: table.alignments[column] }}>{renderInline(cell)}</td>
+              ))}</tr>
+            ))}</tbody>}
+          </table>
+        </div>
+      );
+      i = table.nextLine - 1;
       continue;
     }
 

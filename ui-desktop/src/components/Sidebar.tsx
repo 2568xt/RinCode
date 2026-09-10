@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
 import type { Project, SessionListItem } from '../types';
+import type { ProjectHistory } from '../hooks/useProjectHistory';
 import {
   ChevronDownIcon,
   FolderIcon,
+  RefreshCwIcon,
   LogoIcon,
   MessageSquareIcon,
   PlusIcon,
   TrashIcon,
+  XIcon,
+  SearchIcon,
+  ArchiveIcon,
 } from '../icons';
 import { formatRelativeTime } from '../utils/format';
+import './SidebarActions.css';
+
+type SidebarSessionItem = SessionListItem & { archived?: boolean };
 
 interface SidebarProps {
   collapsed: boolean;
@@ -18,12 +26,22 @@ interface SidebarProps {
   onAddProject: () => void;
   sessions: SessionListItem[];
   activeSessionId: string | null;
-  onSelectSession: (sessionId: string) => void;
+  onSelectSession: (project: Project, sessionId: string) => void;
+  history: ProjectHistory;
+  historyLoading: boolean;
+  historyError: string | null;
+  onReloadHistory: () => void;
   onNewSession: () => void;
   onDeleteSession: (sessionId: string) => void;
   isTurnRunning: boolean;
   isConfirmPending?: boolean;
   loading?: boolean;
+  isSwitchingModel?: boolean;
+  onRemoveProject?: (project: Project) => void;
+  onArchiveSession?: (project: Project, sessionId: string) => void;
+  onOpenSearch?: () => void;
+  onOpenArchive?: () => void;
+  isManaging?: boolean;
 }
 
 export function Sidebar({
@@ -33,6 +51,10 @@ export function Sidebar({
   onSelectProject,
   onAddProject,
   sessions,
+  history,
+  historyLoading,
+  historyError,
+  onReloadHistory,
   activeSessionId,
   onSelectSession,
   onNewSession,
@@ -40,159 +62,172 @@ export function Sidebar({
   isTurnRunning,
   isConfirmPending = false,
   loading = false,
+  isSwitchingModel = false,
+  onRemoveProject,
+  onArchiveSession,
+  onOpenSearch,
+  onOpenArchive,
+  isManaging = false,
 }: SidebarProps) {
-  const [showProjectMenu, setShowProjectMenu] = useState(false);
-
-  const isBusy = isTurnRunning || isConfirmPending || loading;
+  const [closedProjects, setClosedProjects] = useState<Set<string>>(new Set());
+  const isBusy = isTurnRunning || isConfirmPending || loading || isSwitchingModel || isManaging;
   const busyTitle = isTurnRunning
     ? '正在执行任务中，无法进行此操作'
     : isConfirmPending
     ? '请先完成删除确认操作'
+    : isSwitchingModel
+    ? '正在切换模型中，无法进行此操作'
+    : isManaging
+    ? '正在更新工作区，请稍候'
     : loading
     ? '正在加载中，请稍候...'
     : '';
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`} inert={collapsed}>
+      <div className="sidebar-window-controls" aria-hidden="true" />
       <div className="sidebar-header">
         <div className="sidebar-brand">
-          <LogoIcon size={19} color="var(--accent)" />
+          <span className="sidebar-brand-icon"><LogoIcon size={18} /></span>
           <span>RinCode</span>
-          <span className="sidebar-brand-badge">Desktop</span>
         </div>
 
-        <div className="project-section">
-          {projects.length > 0 ? (
-            <div className="project-selector-wrapper">
-              <button
-                type="button"
-                className="project-selector"
-                onClick={() => !isBusy && setShowProjectMenu((prev) => !prev)}
-                disabled={isBusy}
-                title={isBusy ? busyTitle : (activeProject?.path || '')}
-                aria-haspopup="listbox"
-                aria-expanded={showProjectMenu}
-              >
-                <div className="project-info">
-                  <FolderIcon size={14} color="var(--accent)" />
-                  <span className="project-name">
-                    {activeProject?.name || '选择项目...'}
-                  </span>
-                </div>
-                <ChevronDownIcon
-                  size={13}
-                  className={`project-selector-chevron ${showProjectMenu ? 'open' : ''}`}
-                />
-              </button>
-
-              {showProjectMenu && !isBusy && (
-                <div className="project-dropdown-menu">
-                  {projects.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className={`project-dropdown-item ${p.id === activeProject?.id ? 'active' : ''}`}
-                      onClick={() => {
-                        onSelectProject(p);
-                        setShowProjectMenu(false);
-                      }}
-                    >
-                      <FolderIcon size={13} />
-                      <span className="project-dropdown-name">{p.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : null}
-
+        <div className="sidebar-actions">
           <button
             type="button"
-            className="add-project-btn"
-            onClick={onAddProject}
-            disabled={isBusy}
-            title={isBusy ? busyTitle : '选择本地目录作为新项目'}
+            className="new-chat-btn"
+            onClick={onNewSession}
+            disabled={isBusy || !activeProject}
+            title={isBusy ? busyTitle : '开启新会话'}
           >
-            <PlusIcon size={14} />
-            <span>添加本地项目</span>
+            <PlusIcon size={15} />
+            <span>新建对话</span>
+          </button>
+          <div className="sidebar-action-nav">
+            <button
+              type="button"
+              className="sidebar-action-btn"
+              onClick={onOpenSearch}
+              disabled={isBusy || !onOpenSearch}
+              title={isBusy ? busyTitle : '搜索对话'}
+            >
+              <SearchIcon size={14} />
+              <span>搜索对话</span>
+            </button>
+            <button
+              type="button"
+              className="sidebar-action-btn"
+              onClick={onOpenArchive}
+              disabled={isBusy || !onOpenArchive}
+              title={isBusy ? busyTitle : '已归档'}
+            >
+              <ArchiveIcon size={14} />
+              <span>已归档</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div className="sidebar-projects">
+        <div className="sidebar-section-label workspace-label">
+          <span>工作区 · {projects.length}</span>
+          <button type="button" className="history-refresh-btn" aria-label="刷新历史对话"
+            title="刷新历史对话" disabled={historyLoading || isBusy} onClick={onReloadHistory}>
+            <RefreshCwIcon size={12} />
           </button>
         </div>
-      </div>
-
-      <div className="sidebar-actions">
-        <button
-          type="button"
-          className="new-chat-btn"
-          onClick={onNewSession}
-          disabled={isBusy || !activeProject}
-          title={isBusy ? busyTitle : '开启新会话'}
-        >
-          <PlusIcon size={15} />
-          <span>新建对话</span>
-        </button>
-      </div>
-
-      <div className="sidebar-sessions-list">
-        {sessions.length === 0 ? (
-          <div
-            style={{
-              padding: '24px 12px',
-              textAlign: 'center',
-              fontSize: 12,
-              color: 'var(--text-muted)',
-            }}
-          >
-            暂无历史对话
-          </div>
-        ) : (
-          sessions.map((s) => {
-            const isActive = s.id === activeSessionId;
-            const timeStr = formatRelativeTime(s.started_at);
+        {historyError && <div className="project-history-status" role="alert">
+          {historyError} <button type="button" onClick={onReloadHistory}>重试</button>
+        </div>}
+        <nav className="workspace-project-list" aria-label="工作区项目">
+          {projects.map(project => {
+            const isCurrentProject = project.id === activeProject?.id;
+            const expanded = !closedProjects.has(project.id);
+            const entry = history[project.id];
+            const rawItems = (isCurrentProject ? sessions : entry?.sessions || []) as SidebarSessionItem[];
+            const historySessions = (entry?.sessions || []) as SidebarSessionItem[];
+            const historyMap = new Map(historySessions.map(s => [s.id, s]));
+            const items = rawItems.filter(session => {
+              const historyItem = historyMap.get(session.id);
+              return !session.archived && !historyItem?.archived;
+            });
+            const isLoading = isCurrentProject ? loading : historyLoading && !entry;
             return (
-              <div
-                key={s.id}
-                className={`session-item ${isActive ? 'active' : ''}`}
-                onClick={() => !isBusy && onSelectSession(s.id)}
-                title={isBusy ? busyTitle : (s.title || '新会话')}
-                style={{ opacity: isBusy && !isActive ? 0.6 : 1 }}
-              >
-                <div className="session-item-content">
-                  <div className="session-item-header">
-                    <MessageSquareIcon size={13} color={isActive ? 'var(--accent)' : 'var(--text-muted)'} />
-                    <span className="session-title">{s.title || '新对话'}</span>
-                    {s.message_count > 0 && (
-                      <span className="session-msg-badge">{s.message_count}</span>
-                    )}
-                  </div>
-                  <div className="session-meta">
-                    {timeStr || '最近'}
-                    {s.preview ? ` · ${s.preview}` : ''}
-                  </div>
+              <div className="workspace-project-group" key={project.id} data-project-id={project.id}>
+                <div className="workspace-project-row">
+                  <button type="button" className="project-expand-btn"
+                    aria-label={`${expanded ? '收起' : '展开'} ${project.name} 的对话`}
+                    aria-expanded={expanded} onClick={() => setClosedProjects(previous => {
+                      const next = new Set(previous);
+                      if (expanded) next.add(project.id); else next.delete(project.id);
+                      return next;
+                    })}>
+                    <ChevronDownIcon size={12} className={expanded ? '' : 'is-closed'} />
+                  </button>
+                  <button type="button" className={`workspace-project ${isCurrentProject ? 'active' : ''}`}
+                    data-project-id={project.id} aria-current={isCurrentProject ? 'page' : undefined}
+                    disabled={isBusy} title={isBusy ? busyTitle : project.path}
+                    onClick={() => {
+                      setClosedProjects(previous => { const next = new Set(previous); next.delete(project.id); return next; });
+                      if (!isCurrentProject) onSelectProject(project);
+                    }}>
+                    <FolderIcon size={14} />
+                    <span className="project-name">{project.name}</span>
+                    <span className="workspace-project-current">{items.length || (isCurrentProject ? '当前' : '')}</span>
+                  </button>
+                  <button type="button" className="project-remove-btn"
+                    aria-label="移除项目" title={isBusy ? busyTitle : '移除项目'}
+                    disabled={isBusy || !onRemoveProject}
+                    onClick={() => onRemoveProject?.(project)}>
+                    <XIcon size={12} />
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  className="session-delete-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isBusy) {
-                      onDeleteSession(s.id);
-                    }
-                  }}
-                  disabled={isBusy}
-                  title={isBusy ? busyTitle : '删除此会话'}
-                  aria-label="删除此会话"
-                >
-                  <TrashIcon size={14} />
-                </button>
+                {expanded && <div className="project-session-list" aria-label={`${project.name} 的对话`}>
+                  {entry?.error && <div className="project-history-status" role="alert">{entry.error}</div>}
+                  {isLoading ? <div className="project-history-status" role="status">正在加载对话…</div>
+                    : items.length === 0 ? <div className="project-history-status">{historySessions.some(session => session.archived) ? '暂无未归档的对话' : '还没有已保存的对话'}</div>
+                    : items.map(session => {
+                      const selected = isCurrentProject && session.id === activeSessionId;
+                      const isSaved = historyMap.has(session.id);
+                      return (
+                        <div key={session.id} className={`session-item ${selected ? 'active' : ''}`} data-session-id={session.id}>
+                          <button type="button" className="session-item-content"
+                            onClick={() => onSelectSession(project, session.id)} disabled={isBusy}
+                            aria-current={selected ? 'page' : undefined} title={isBusy ? busyTitle : session.title || '新对话'}>
+                            <span className="session-item-header">
+                              <MessageSquareIcon size={12} />
+                              <span className="session-title">{session.title || '新对话'}</span>
+                            </span>
+                            <span className="session-meta">{formatRelativeTime(session.started_at) || '最近'}{session.message_count === 0 ? ' · 尚无消息' : ''}</span>
+                          </button>
+                          {isSaved && <button type="button" className="session-archive-btn"
+                            onClick={() => onArchiveSession?.(project, session.id)}
+                            disabled={isBusy || !onArchiveSession}
+                            title={isBusy ? busyTitle : '归档此会话'} aria-label="归档此会话">
+                            <ArchiveIcon size={13} />
+                          </button>}
+                          {isCurrentProject && <button type="button" className="session-delete-btn"
+                            onClick={() => onDeleteSession(session.id)} disabled={isBusy}
+                            title={isBusy ? busyTitle : '删除此会话'} aria-label="删除此会话">
+                            <TrashIcon size={13} />
+                          </button>}
+                        </div>
+                      );
+                    })}
+                </div>}
               </div>
             );
-          })
-        )}
+          })}
+        </nav>
       </div>
+      <button type="button" className="add-project-btn" onClick={onAddProject} disabled={isBusy}
+        title={isBusy ? busyTitle : '选择本地目录作为新项目'}>
+        <PlusIcon size={14} /><span>添加本地项目</span>
+      </button>
 
       <div className="sidebar-footer">
-        <span>RinCode Engine</span>
+        <span>RinCode Desktop</span>
         <span>v0.1.0</span>
       </div>
     </aside>

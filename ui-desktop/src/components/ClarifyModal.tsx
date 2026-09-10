@@ -23,7 +23,7 @@ export function ClarifyModal({ request, onRespond }: ClarifyModalProps) {
         <HelpCircleIcon size={18} />
         <span>智能体向您提问：</span>
       </div>
-      <div style={{ fontSize: 14, color: '#78350f', lineHeight: 1.5 }}>
+      <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
         {request.question}
       </div>
 

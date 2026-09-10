@@ -79,6 +79,10 @@ describe('Security & Allowlist Guardrails', () => {
     assert.ok(isMethodAllowed('system.hello'));
     assert.ok(isMethodAllowed('system.ping'));
     assert.ok(isMethodAllowed('system.version'));
+    assert.ok(isMethodAllowed('desktop.model.options'));
+    assert.ok(isMethodAllowed('desktop.model.select'));
+    assert.equal(isMethodAllowed('model.save_key'), false);
+    assert.equal(isMethodAllowed('model.disconnect'), false);
     assert.equal(isMethodAllowed('config.get'), false);
     assert.equal(isMethodAllowed('config.set'), false);
   });

@@ -34,6 +34,8 @@ const hostFiles = [
   'backend-manager.cjs',
   'rpc-client.cjs',
   'project-store.cjs',
+  'project-history.cjs',
+  'session-archive-store.cjs',
   'allowlist.cjs',
   'metadata.cjs',
 ];

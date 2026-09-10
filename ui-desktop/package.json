@@ -12,7 +12,8 @@
     "package:mac": "node scripts/package-mac.mjs",
     "postinstall": "install-electron",
     "type-check": "tsc --noEmit -p tsconfig.json",
-    "test:e2e": "npm run build && node scripts/verify-desktop.cjs"
+    "test:e2e": "npm run build && node scripts/verify-desktop.cjs",
+    "test:models": "node scripts/verify-models.cjs"
   },
   "dependencies": {
     "react": "^19.2.4",

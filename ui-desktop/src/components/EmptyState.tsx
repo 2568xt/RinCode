@@ -1,74 +1,50 @@
 import React from 'react';
 import type { Project } from '../types';
-import { FolderIcon, SparklesIcon } from '../icons';
+import { CodeIcon, FolderIcon, LogoIcon, CheckIcon, MessageSquareIcon } from '../icons';
 
 interface EmptyStateProps {
   project: Project | null;
+  onAddProject: () => void;
+}
+
+export function EmptyState({ project, onAddProject }: EmptyStateProps) {
+  return (
+    <div className="empty-state-card">
+      <div className="empty-state-icon" aria-hidden="true"><LogoIcon size={28} /></div>
+      <h1 className="empty-state-title">今天，想做点什么？</h1>
+      <p className="empty-state-desc">
+        {project ? '读懂项目，打磨代码，让想法更进一步。' : '打开一个项目，从你的下一个想法开始。'}
+      </p>
+      {!project && (
+        <button type="button" className="open-project-btn" onClick={onAddProject}>
+          <FolderIcon size={16} />打开项目
+        </button>
+      )}
+    </div>
+  );
+}
+
+interface QuickPromptsProps {
   onSelectPrompt: (prompt: string) => void;
   disabled?: boolean;
 }
 
-export function EmptyState({ project, onSelectPrompt, disabled }: EmptyStateProps) {
-  const quickPrompts = [
-    {
-      title: '项目架构概览',
-      hint: '分析当前工作区的核心目录与模块结构',
-      prompt: '请分析当前工作区的核心目录结构与主要模块的职责。',
-    },
-    {
-      title: '检查未提交代码',
-      hint: '查看 git 状态与近期代码变更',
-      prompt: '请查看当前项目的 git status 和近期的修改，并给出总结。',
-    },
-    {
-      title: '查找待办事项',
-      hint: '检索项目中的 TODO 和 FIXME 标注',
-      prompt: '请检索代码中所有的 TODO 和 FIXME 标记，并列出位置与内容。',
-    },
-    {
-      title: '功能设计与实现',
-      hint: '根据需求设计新的接口或模块实现',
-      prompt: '我想在当前项目中添加一个新特性，请先帮我梳理实现步骤。',
-    },
+export function QuickPrompts({ onSelectPrompt, disabled }: QuickPromptsProps) {
+  const prompts = [
+    { title: '了解项目', Icon: FolderIcon, prompt: '请分析当前工作区的核心目录结构与主要模块的职责。' },
+    { title: '审查改动', Icon: CodeIcon, prompt: '请查看当前项目的 git status 和近期的修改，并给出总结。' },
+    { title: '查找待办', Icon: CheckIcon, prompt: '请检索代码中所有的 TODO 和 FIXME 标记，并列出位置与内容。' },
+    { title: '规划功能', Icon: MessageSquareIcon, prompt: '我想在当前项目中添加一个新特性，请先帮我梳理实现步骤。' },
   ];
 
   return (
-    <div className="empty-state-card">
-      <div className="empty-state-icon">
-        <SparklesIcon size={26} />
-      </div>
-      <div className="empty-state-eyebrow">YOUR NEXT IDEA</div>
-      <h2 className="empty-state-title">从一个想法开始，把事情做成。</h2>
-      <p className="empty-state-desc">
-        {project ? (
-          <>
-            <span className="empty-state-project-tag" title={project.path}>
-              <FolderIcon size={12} />
-              <span>{project.name}</span>
-            </span>
-            <span>已就绪。在下方输入问题，或选择快捷指令开始对话。</span>
-          </>
-        ) : (
-          '在左侧侧边栏选择或添加本地项目，即可开启独立的工程智能助手。'
-        )}
-      </p>
-
-      {project && (
-        <div className="quick-prompts-grid">
-          {quickPrompts.map((item, idx) => (
-            <button
-              key={idx}
-              type="button"
-              className="quick-prompt-card"
-              disabled={disabled}
-              onClick={() => onSelectPrompt(item.prompt)}
-            >
-              <div className="quick-prompt-title">{item.title}</div>
-              <div className="quick-prompt-hint">{item.hint}</div>
-            </button>
-          ))}
-        </div>
-      )}
+    <div className="quick-prompts-grid" aria-label="快捷任务">
+      {prompts.map(({ title, Icon, prompt }) => (
+        <button key={title} type="button" className="quick-prompt-card" disabled={disabled}
+          onClick={() => onSelectPrompt(prompt)} title={prompt}>
+          <Icon size={15} /><span>{title}</span>
+        </button>
+      ))}
     </div>
   );
 }

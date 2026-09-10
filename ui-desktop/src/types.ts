@@ -3,6 +3,7 @@ import type { BackendStatus, DesktopBridge, DesktopEvent, Project } from './brid
 export type { BackendStatus, DesktopBridge, DesktopEvent, Project };
 
 export interface SessionListItem {
+  archived?: boolean;
   id: string;
   message_count: number;
   preview: string;
@@ -69,4 +70,25 @@ export interface ClarifyRequest {
 export interface TurnEventPayload {
   type: string;
   payload?: any;
+}
+
+export interface ModelProvider {
+  slug: string;
+  name: string;
+  configured: boolean;
+  models: string[];
+}
+
+export interface ModelOptionsResponse {
+  model: string;
+  provider: string;
+  scope: 'project_runtime';
+  providers: ModelProvider[];
+}
+
+export interface ModelSelectResponse {
+  applied: boolean;
+  model: string;
+  provider: string;
+  scope: 'project_runtime';
 }

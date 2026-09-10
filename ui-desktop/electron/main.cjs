@@ -6,6 +6,8 @@ const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 
 const { BackendManager } = require('./backend-manager.cjs');
 const { ProjectStore } = require('./project-store.cjs');
+const { readProjectHistory } = require('./project-history.cjs');
+const { SessionArchiveStore } = require('./session-archive-store.cjs');
 
 app.setName('RinCode');
 
@@ -17,6 +19,7 @@ let projectStore = null;
 
 /** @type {BackendManager | null} */
 let backendManager = null;
+let archiveStore = null;
 
 /**
  * Validates that an incoming IPC invocation originated from the trusted
@@ -48,7 +51,9 @@ function createMainWindow() {
     minWidth: 900,
     minHeight: 600,
     title: 'RinCode',
-    backgroundColor: '#f7f6f3', // Warm off-white palette per contract
+    backgroundColor: '#ffffff',
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 20, y: 18 },
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -97,6 +102,42 @@ function registerIpcHandlers() {
   ipcMain.handle('desktop:projects', async (event) => {
     validateSender(event);
     return projectStore.loadProjects();
+  });
+
+  ipcMain.handle('desktop:project-history', async (event, options = {}) => {
+    validateSender(event);
+    const query = options?.query ?? '';
+    if (typeof query !== 'string') throw new Error('搜索关键词必须是文本');
+    const history = await readProjectHistory(projectStore.loadProjects(), query);
+    const archives = archiveStore.load();
+    for (const [projectId, entry] of Object.entries(history)) {
+      for (const session of entry.sessions) session.archived = archives[projectId]?.[session.id] === true;
+    }
+    return history;
+  });
+
+  ipcMain.handle('desktop:archive-session', async (event, projectId, sessionId, archived) => {
+    validateSender(event);
+    const project = projectStore.getProject(projectId);
+    if (!project || typeof sessionId !== 'string' || typeof archived !== 'boolean') throw new Error('项目或对话无效');
+    const history = await readProjectHistory([project]);
+    if (!history[projectId]?.sessions.some(session => session.id === sessionId)) throw new Error('请先保存对话，再归档');
+    archiveStore.setArchived(projectId, sessionId, archived);
+  });
+
+  ipcMain.handle('desktop:remove-project', async (event, projectId) => {
+    validateSender(event);
+    const project = projectStore.getProject(projectId);
+    if (!project) throw new Error('项目不存在');
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'question', buttons: ['取消', '移除项目'], defaultId: 0, cancelId: 0,
+      message: `从工作区移除「${project.name}」？`,
+      detail: '只移除此应用中的项目入口。磁盘上的项目文件和已保存对话都会保留，重新添加目录即可找回。',
+    });
+    if (response !== 1) return { removed: false, projects: projectStore.loadProjects() };
+    const projects = projectStore.removeProject(projectId);
+    if (backendManager.activeProject?.id === projectId) await backendManager.shutdown();
+    return { removed: true, projects };
   });
 
   // 2. Add project via native directory chooser
@@ -154,6 +195,7 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     const userDataPath = app.getPath('userData');
     projectStore = new ProjectStore(userDataPath);
+    archiveStore = new SessionArchiveStore(userDataPath);
 
     backendManager = new BackendManager({
       onEvent: (event) => {

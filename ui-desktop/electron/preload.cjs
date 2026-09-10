@@ -18,6 +18,10 @@ contextBridge.exposeInMainWorld('rincode', {
     return ipcRenderer.invoke('desktop:projects');
   },
 
+  projectHistory: (options) => ipcRenderer.invoke('desktop:project-history', options),
+  removeProject: (projectId) => ipcRenderer.invoke('desktop:remove-project', projectId),
+  setSessionArchived: (projectId, sessionId, archived) => ipcRenderer.invoke('desktop:archive-session', projectId, sessionId, archived),
+
   /**
    * Displays native directory dialog to add a project.
    * @returns {Promise<{ id: string, name: string, path: string } | null>}

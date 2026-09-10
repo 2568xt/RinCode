@@ -1,25 +1,18 @@
 import React, { useEffect, useRef } from 'react';
-import type { ChatMessage, ClarifyRequest, Project } from '../types';
-import { EmptyState } from './EmptyState';
+import type { ChatMessage, ClarifyRequest } from '../types';
 import { MessageItem } from './MessageItem';
 import { ClarifyModal } from './ClarifyModal';
 
 interface ChatAreaProps {
-  project: Project | null;
   messages: ChatMessage[];
   clarifyRequest: ClarifyRequest | null;
   onRespondClarify: (answer: string) => void;
-  onSelectPrompt: (prompt: string) => void;
-  isTurnRunning: boolean;
 }
 
 export function ChatArea({
-  project,
   messages,
   clarifyRequest,
   onRespondClarify,
-  onSelectPrompt,
-  isTurnRunning,
 }: ChatAreaProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -31,25 +24,15 @@ export function ChatArea({
   return (
     <div className="chat-scroll-area">
       <div className="chat-inner-container">
-        {messages.length === 0 ? (
-          <EmptyState
-            project={project}
-            onSelectPrompt={onSelectPrompt}
-            disabled={isTurnRunning}
-          />
-        ) : (
-          <>
-            {messages.map((msg) => (
-              <MessageItem key={msg.id} message={msg} />
-            ))}
+        {messages.map((msg) => (
+          <MessageItem key={msg.id} message={msg} />
+        ))}
 
-            {clarifyRequest && (
-              <ClarifyModal
-                request={clarifyRequest}
-                onRespond={onRespondClarify}
-              />
-            )}
-          </>
+        {clarifyRequest && (
+          <ClarifyModal
+            request={clarifyRequest}
+            onRespond={onRespondClarify}
+          />
         )}
         <div ref={bottomRef} style={{ height: 1 }} />
       </div>

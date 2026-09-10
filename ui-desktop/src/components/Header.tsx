@@ -33,11 +33,12 @@ export function Header({
 
         {project && (
           <div className="header-project-badge" title={project.path}>
-            <FolderIcon size={12} color="var(--accent)" />
+            <FolderIcon size={14} />
             <span>{project.name}</span>
           </div>
         )}
 
+        {project && <span className="header-divider" aria-hidden="true">/</span>}
         <div className="header-session-info">
           <span className="header-session-title">{sessionTitle || '新对话'}</span>
         </div>
