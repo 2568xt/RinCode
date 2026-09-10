@@ -79,8 +79,8 @@ describe('Security & Allowlist Guardrails', () => {
     assert.ok(isMethodAllowed('system.hello'));
     assert.ok(isMethodAllowed('system.ping'));
     assert.ok(isMethodAllowed('system.version'));
-    assert.ok(isMethodAllowed('config.get'));
-    assert.ok(isMethodAllowed('config.set'));
+    assert.equal(isMethodAllowed('config.get'), false);
+    assert.equal(isMethodAllowed('config.set'), false);
   });
 
   it('strictly rejects unlisted or malicious methods', () => {

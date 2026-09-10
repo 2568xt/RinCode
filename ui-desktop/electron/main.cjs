@@ -7,6 +7,8 @@ const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const { BackendManager } = require('./backend-manager.cjs');
 const { ProjectStore } = require('./project-store.cjs');
 
+app.setName('RinCode');
+
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
 

@@ -43,3 +43,6 @@ docs/evidence/
 *.log
 *.sqlite
 *.sqlite3
+
+# Desktop local application bundle and verification output
+ui-desktop/out/

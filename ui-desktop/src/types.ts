@@ -1,6 +1,6 @@
-import type { BackendStatus, DesktopEvent, Project } from './bridge';
+import type { BackendStatus, DesktopBridge, DesktopEvent, Project } from './bridge';
 
-export type { BackendStatus, DesktopEvent, Project };
+export type { BackendStatus, DesktopBridge, DesktopEvent, Project };
 
 export interface SessionListItem {
   id: string;

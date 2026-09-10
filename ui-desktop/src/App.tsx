@@ -33,6 +33,10 @@ export function App() {
   const isTurnRunningRef = useRef(false);
   const isConfirmPendingRef = useRef(false);
 
+  const isInteractionBlocked = useCallback(
+    () => isTurnRunningRef.current || isConfirmPendingRef.current, []
+  );
+
   // 2. Sessions management
   const {
     sessions,
@@ -48,8 +52,7 @@ export function App() {
     activeProject,
     backendStatus,
     rpc,
-    isTurnRunning: isTurnRunningRef.current,
-    isConfirmPending: isConfirmPendingRef.current,
+    isInteractionBlocked,
     onSessionResumed: (msgs) => setResumedMessagesRef.current?.(msgs),
     onClearMessages: () => clearMessagesRef.current?.(),
   });
@@ -94,7 +97,7 @@ export function App() {
   // Send turn handler: passes explicit targetSessionId to avoid stale closure during first send
   const handleSend = useCallback(
     async (text: string) => {
-      if (!activeProject || isTurnRunning || isConfirmPending || backendStatus?.state !== 'ready') {
+      if (!activeProject || sessionLoading || isTurnRunning || isConfirmPending || backendStatus?.state !== 'ready') {
         return;
       }
 
@@ -108,7 +111,7 @@ export function App() {
         sendTurn(text, targetSessionId);
       }
     },
-    [activeProject, isTurnRunning, isConfirmPending, backendStatus?.state, activeSessionId, createSession, sendTurn]
+    [activeProject, sessionLoading, isTurnRunning, isConfirmPending, backendStatus?.state, activeSessionId, createSession, sendTurn]
   );
 
   const handleSelectPrompt = useCallback(
@@ -135,7 +138,7 @@ export function App() {
   const isComposerDisabled =
     !activeProject ||
     backendStatus?.state !== 'ready' ||
-    isConfirmPending;
+    sessionLoading || isConfirmPending;
 
   const activeError = bridgeError || sessionError || turnError;
 

@@ -5,8 +5,7 @@ interface UseSessionsProps {
   activeProject: Project | null;
   backendStatus: BackendStatus | null;
   rpc: (projectId: string, method: string, params?: Record<string, unknown>) => Promise<any>;
-  isTurnRunning: boolean;
-  isConfirmPending: boolean;
+  isInteractionBlocked: () => boolean;
   onSessionResumed: (messages: ChatMessage[]) => void;
   onClearMessages: () => void;
 }
@@ -15,8 +14,7 @@ export function useSessions({
   activeProject,
   backendStatus,
   rpc,
-  isTurnRunning,
-  isConfirmPending,
+  isInteractionBlocked,
   onSessionResumed,
   onClearMessages,
 }: UseSessionsProps) {
@@ -106,12 +104,11 @@ export function useSessions({
       return;
     }
 
-    // If session was just created and not saved yet, avoid calling session.resume
+    const currentToken = ++resumeTokenRef.current;
+    // A just-created session is blank until its first completed turn.
     if (lazySessionsRef.current.has(activeSessionId)) {
       return;
     }
-
-    const currentToken = ++resumeTokenRef.current;
     setLoading(true);
     setSessionError(null);
 
@@ -146,11 +143,12 @@ export function useSessions({
 
   // Create new session
   const createSession = useCallback(async (): Promise<string | null> => {
-    if (!activeProject || isTurnRunning || isConfirmPending || backendStatus?.state !== 'ready') {
+    if (!activeProject || loading || isInteractionBlocked() || backendStatus?.state !== 'ready') {
       return null;
     }
 
     setSessionError(null);
+    setLoading(true);
     try {
       const resp = await rpc(activeProject.id, 'session.create', {});
       if (resp?.session_id) {
@@ -174,14 +172,16 @@ export function useSessions({
       const msg = err?.message || String(err);
       console.error('Failed to create session:', err);
       setSessionError(`创建新会话失败: ${msg}`);
+    } finally {
+      setLoading(false);
     }
     return null;
-  }, [activeProject, isTurnRunning, isConfirmPending, backendStatus?.state, rpc]);
+  }, [activeProject, loading, isInteractionBlocked, backendStatus?.state, rpc]);
 
   // Delete session
   const deleteSession = useCallback(
     async (sessionId: string) => {
-      if (!activeProject || isTurnRunning || isConfirmPending || loading) {
+      if (!activeProject || isInteractionBlocked() || loading) {
         return;
       }
 
@@ -211,20 +211,22 @@ export function useSessions({
         setSessionError(`删除会话失败: ${msg}`);
       }
     },
-    [activeProject, isTurnRunning, isConfirmPending, loading, rpc, activeSessionId]
+    [activeProject, isInteractionBlocked, loading, rpc, activeSessionId]
   );
 
   const selectSession = useCallback(
     (sessionId: string) => {
-      if (isTurnRunning || isConfirmPending || loading) return;
+      if (isInteractionBlocked() || loading) return;
       if (sessionId === activeSessionId) return;
+      onClearMessagesRef.current();
       setActiveSessionId(sessionId);
     },
-    [isTurnRunning, isConfirmPending, loading, activeSessionId]
+    [isInteractionBlocked, loading, activeSessionId]
   );
 
   const updateSessionItem = useCallback(
     (sessionId: string, updater: (item: SessionListItem) => SessionListItem) => {
+      lazySessionsRef.current.delete(sessionId);
       setSessions((prev) =>
         prev.map((s) => (s.id === sessionId ? updater(s) : s))
       );
