@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import signal
 
 from rincode.sandbox.interfaces import ExecResult, SandboxExecutor
 
@@ -81,7 +82,8 @@ class DirectExecutor(SandboxExecutor):
     """No-op Sandbox，在 Host 直接执行命令的 Executor。
 
     `is_sandboxed` 明确返回 `False`。`exec` 使用 Shell Subprocess，捕获 Stdout/Stderr，Timeout 最多限制
-    为 600 Seconds；超时会 Kill Process 并返回 Exit Code -1。输出以 UTF-8 ``errors="replace"`` 解码。
+    为 600 Seconds；超时返回 Exit Code -1。POSIX 上超时或取消会终止命令进程组，其他平台终止
+    Shell Process。输出以 UTF-8 ``errors="replace"`` 解码。
 
     它不实现 Long-running Process Spawning，也不隔离 CWD、Filesystem 或 Network。只有用户明确选择
     Host Execution、或运行环境无法使用 BoxLite 时才应使用，并把命令视为等同当前账户手动执行。
@@ -108,15 +110,25 @@ class DirectExecutor(SandboxExecutor):
             stderr=asyncio.subprocess.PIPE,
             cwd=cwd,
             env={**_baseline_env(), **(env or {})},
+            start_new_session=os.name == "posix",
         )
         try:
             stdout_b, stderr_b = await asyncio.wait_for(process.communicate(), timeout=effective_timeout)
-        except asyncio.TimeoutError:
-            process.kill()
+        except (asyncio.TimeoutError, asyncio.CancelledError) as exc:
+            try:
+                if os.name == "posix":
+                    # Shell 可能已退出，但其子进程仍持有输出管道并继续写文件。
+                    os.killpg(process.pid, signal.SIGKILL)
+                else:
+                    process.kill()
+            except ProcessLookupError:
+                pass
             try:
                 await asyncio.wait_for(process.wait(), timeout=5.0)
             except asyncio.TimeoutError:
                 pass
+            if isinstance(exc, asyncio.CancelledError):
+                raise
             return ExecResult(stdout="", stderr=f"Timed out after {effective_timeout}s", exit_code=-1)
         return ExecResult(
             stdout=stdout_b.decode("utf-8", errors="replace"),
