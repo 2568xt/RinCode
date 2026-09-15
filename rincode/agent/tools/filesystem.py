@@ -6,6 +6,7 @@ READ effect，Write/Edit 声明 WRITE；返回值统一为模型可读文本，�
 """
 
 import difflib
+import re
 from pathlib import Path
 from typing import Any
 
@@ -187,32 +188,33 @@ class WriteFileTool(_FsTool):
 # ---------------------------------------------------------------------------
 
 
-def _find_match(content: str, old_text: str) -> tuple[str | None, int]:
+def _find_match(content: str, old_text: str) -> list[tuple[int, int]]:
     """在 ``content`` 中定位 old_text，先精确匹配，再做逐行 trim 的滑动匹配。
 
-    调用方应先把 CRLF 规范成 LF。精确命中时返回原 old_text 与出现次数；否则按相同行数滑动，
-    比较每行 strip 后内容，使轻微缩进或尾随空白差异仍可编辑。返回
-    ``(matched_fragment, count)``；没有匹配时返回 ``(None, 0)``。该函数不自行决定多匹配是否
-    安全替换。
+    调用方应先把 CRLF 规范成 LF。精确命中时返回不重叠的字符范围；否则按相同行数滑动，
+    比较每行 strip 后内容，使轻微缩进或尾随空白差异仍可编辑。保留每个候选的原文范围，
+    避免替换时重新搜索同名子串而改到其他行。没有匹配时返回空列表；多匹配由调用方处理。
     """
     if old_text in content:
-        return old_text, content.count(old_text)
+        return [match.span() for match in re.finditer(re.escape(old_text), content)]
 
     old_lines = old_text.splitlines()
     if not old_lines:
-        return None, 0
+        return []
     stripped_old = [line.strip() for line in old_lines]
     content_lines = content.splitlines()
+    line_offsets = [0]
+    for line in content.splitlines(keepends=True):
+        line_offsets.append(line_offsets[-1] + len(line))
 
     candidates = []
     for i in range(len(content_lines) - len(stripped_old) + 1):
         window = content_lines[i : i + len(stripped_old)]
         if [line.strip() for line in window] == stripped_old:
-            candidates.append("\n".join(window))
+            last = i + len(stripped_old) - 1
+            candidates.append((line_offsets[i], line_offsets[last] + len(content_lines[last])))
 
-    if candidates:
-        return candidates[0], len(candidates)
-    return None, 0
+    return candidates
 
 
 class EditFileTool(_FsTool):
@@ -272,10 +274,11 @@ class EditFileTool(_FsTool):
             raw = fp.read_bytes()
             uses_crlf = b"\r\n" in raw
             content = raw.decode("utf-8").replace("\r\n", "\n")
-            match, count = _find_match(content, old_text.replace("\r\n", "\n"))
+            matches = _find_match(content, old_text.replace("\r\n", "\n"))
 
-            if match is None:
+            if not matches:
                 return self._not_found_msg(old_text, content, path)
+            count = len(matches)
             if count > 1 and not replace_all:
                 return (
                     f"Warning: old_text appears {count} times. "
@@ -283,7 +286,15 @@ class EditFileTool(_FsTool):
                 )
 
             norm_new = new_text.replace("\r\n", "\n")
-            new_content = content.replace(match, norm_new) if replace_all else content.replace(match, norm_new, 1)
+            parts, cursor = [], 0
+            for start, end in matches if replace_all else matches[:1]:
+                # 与 str.replace 一致，从左向右替换，跳过重叠的多行候选。
+                if start < cursor:
+                    continue
+                parts.extend((content[cursor:start], norm_new))
+                cursor = end
+            parts.append(content[cursor:])
+            new_content = "".join(parts)
             if uses_crlf:
                 new_content = new_content.replace("\n", "\r\n")
 
