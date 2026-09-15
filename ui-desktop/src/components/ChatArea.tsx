@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import type { ChatMessage, ClarifyRequest } from '../types';
 import { MessageItem } from './MessageItem';
 import { ClarifyModal } from './ClarifyModal';
@@ -14,15 +14,22 @@ export function ChatArea({
   clarifyRequest,
   onRespondClarify,
 }: ChatAreaProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const followBottomRef = useRef(true);
 
-  // Auto scroll to bottom when messages or clarify request update
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Follow new output only while the reader stays near the bottom.
+  useLayoutEffect(() => {
+    const viewport = scrollRef.current;
+    if (viewport && followBottomRef.current) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
   }, [messages, clarifyRequest]);
 
   return (
-    <div className="chat-scroll-area">
+    <div className="chat-scroll-area" ref={scrollRef} onScroll={event => {
+      const viewport = event.currentTarget;
+      followBottomRef.current = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop <= 48;
+    }}>
       <div className="chat-inner-container">
         {messages.map((msg) => (
           <MessageItem key={msg.id} message={msg} />
@@ -34,7 +41,7 @@ export function ChatArea({
             onRespond={onRespondClarify}
           />
         )}
-        <div ref={bottomRef} style={{ height: 1 }} />
+        <div style={{ height: 1 }} />
       </div>
     </div>
   );
