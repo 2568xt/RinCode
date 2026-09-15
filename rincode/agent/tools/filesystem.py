@@ -57,7 +57,8 @@ class ReadFileTool(_FsTool):
 
     ``offset`` 使用 1-based 行号，``limit`` 默认 2000；输出每行带真实行号，便于 Edit 或人工
     定位。单次正文最多 `_MAX_CHARS=128_000`，超出会按完整行再次裁剪，并明确给出下一
-    offset；空文件和越界 offset 使用不同结果。Tool 只读且 concurrency_safe，不读取目录、
+    offset；单行无法放入上限时明确报错并提示分块读取，避免空页循环。空文件和越界 offset
+    使用不同结果。Tool 只读且 concurrency_safe，不读取目录、
     不自动猜编码，路径仍受 `_FsTool` 允许根约束。
     """
 
@@ -121,10 +122,19 @@ class ReadFileTool(_FsTool):
             if len(result) > self._MAX_CHARS:
                 trimmed, chars = [], 0
                 for line in numbered:
-                    chars += len(line) + 1
-                    if chars > self._MAX_CHARS:
+                    next_chars = chars + len(line) + (1 if trimmed else 0)
+                    if next_chars > self._MAX_CHARS:
                         break
                     trimmed.append(line)
+                    chars = next_chars
+                if not trimmed:
+                    message = (
+                        f"Error: line {offset} exceeds read_file's {self._MAX_CHARS}-character output limit. "
+                        "Use exec to inspect this line in smaller chunks."
+                    )
+                    if offset < total:
+                        message += f" Use offset={offset + 1} to read the remaining lines."
+                    return message
                 end = start + len(trimmed)
                 result = "\n".join(trimmed)
 
