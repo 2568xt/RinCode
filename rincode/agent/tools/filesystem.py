@@ -349,7 +349,8 @@ class ListDirTool(_FsTool):
     """列举目录内容，并可选择递归探索与结果上限。
 
     非递归结果用文件/目录图标区分；``recursive=True`` 时返回相对路径，并跳过 .git、
-    node_modules、缓存、构建和 coverage 等 `_IGNORE_DIRS`。``max_entries`` 默认 200，只限制实际
+    node_modules、缓存、构建和 coverage 等 `_IGNORE_DIRS`，过滤仅针对列举根目录内的相对路径。
+    ``max_entries`` 默认 200，只限制实际
     展示数量，Tool 仍统计总条目并在截断时报告完整 total。Read effect 可并发；目标不存在、
     不是目录或越过 allowed_dir 时返回明确 Error。
     """
@@ -423,11 +424,11 @@ class ListDirTool(_FsTool):
 
             if recursive:
                 for item in sorted(dp.rglob("*")):
-                    if any(p in self._IGNORE_DIRS for p in item.parts):
+                    rel = item.relative_to(dp)
+                    if any(p in self._IGNORE_DIRS for p in rel.parts):
                         continue
                     total += 1
                     if len(items) < cap:
-                        rel = item.relative_to(dp)
                         items.append(f"{rel}/" if item.is_dir() else str(rel))
             else:
                 for item in sorted(dp.iterdir()):
