@@ -356,6 +356,7 @@ export function App() {
             <EmptyState project={activeProject} onAddProject={handleAddProject} />
           ) : (
             <ChatArea
+              key={JSON.stringify([activeProject?.id, activeSessionId])}
               messages={messages}
               clarifyRequest={clarifyRequest}
               onRespondClarify={respondClarify}
