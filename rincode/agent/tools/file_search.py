@@ -315,8 +315,11 @@ class GrepTool(_FsTool):
         deadline = time.monotonic() + _WALK_DEADLINE_S
         for root, dirs, names in os.walk(base):
             if time.monotonic() > deadline:
-                # 遇到意外巨大或慢速的目录树时停止，而不是挂起。
-                break
+                # 明确报告未完成，避免把超时误报成无匹配或完整结果。
+                raise TimeoutError(
+                    f"grep search timed out after {_WALK_DEADLINE_S}s; search is incomplete. "
+                    "Specify a narrower directory to search."
+                )
             dirs[:] = [d for d in dirs if d not in _IGNORE_DIRS]
             for n in sorted(names):
                 if glob and not fnmatch.fnmatch(n, glob):
