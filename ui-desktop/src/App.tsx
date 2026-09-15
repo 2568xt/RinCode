@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useDesktopBridge } from './hooks/useDesktopBridge';
 import { useSessions } from './hooks/useSessions';
+import { useComposerDraft } from './hooks/useComposerDraft';
 import { useTurn } from './hooks/useTurn';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -18,7 +19,6 @@ import type { ChatMessage, Project } from './types';
 
 export function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [composerDraft, setComposerDraft] = useState('');
   const [requestedSession, setRequestedSession] = useState<{ projectId: string; sessionId: string } | null>(null);
   const [library, setLibrary] = useState<'all' | 'archived' | null>(null);
   const [isManaging, setIsManaging] = useState(false);
@@ -102,6 +102,10 @@ export function App() {
     archivedSessionIds: activeProject ? history[activeProject.id]?.sessions.filter(s => s.archived).map(s => s.id) : [],
   });
 
+  const { draft: composerDraft, setDraft: setComposerDraft, clearDraft: clearComposerDraft } = useComposerDraft(
+    activeProject?.id || null, activeSessionId
+  );
+
   const savedSessions = activeProject ? history[activeProject.id]?.sessions : undefined;
   const sessions = currentSessions.map(session => ({
     ...session,
@@ -169,12 +173,12 @@ export function App() {
       }
 
       if (targetSessionId) {
-        setComposerDraft('');
+        clearComposerDraft();
         isTurnRunningRef.current = true;
         sendTurn(text, targetSessionId);
       }
     },
-    [activeProject, activeArchived, backendStatus?.state, activeSessionId, createSession, sendTurn, isInteractionBlocked]
+    [activeProject, activeArchived, backendStatus?.state, activeSessionId, createSession, sendTurn, isInteractionBlocked, clearComposerDraft]
   );
 
   const handleSelectPrompt = useCallback(
@@ -363,7 +367,8 @@ export function App() {
             onCancel={cancelTurn}
             isTurnRunning={isTurnRunning}
             disabled={isComposerDisabled}
-            initialValue={composerDraft}
+            value={composerDraft}
+            onChange={setComposerDraft}
             project={activeProject}
             modelPicker={
               <ModelPicker

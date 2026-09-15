@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { FolderIcon, SendIcon, StopIcon } from '../icons';
 import type { Project } from '../types';
 
@@ -8,7 +8,8 @@ interface ComposerProps {
   isTurnRunning: boolean;
   disabled: boolean;
   placeholder?: string;
-  initialValue?: string;
+  value: string;
+  onChange: (text: string) => void;
   project: Project | null;
   modelPicker?: React.ReactNode;
 }
@@ -19,21 +20,12 @@ export function Composer({
   isTurnRunning,
   disabled,
   placeholder = '描述你的想法，或交给 RinCode 一个任务…',
-  initialValue = '',
+  value: text,
+  onChange,
   project,
   modelPicker,
 }: ComposerProps) {
-  const [text, setText] = useState(initialValue);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (initialValue) {
-      setText(initialValue);
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
-    }
-  }, [initialValue]);
 
   // Auto-resize textarea height
   useEffect(() => {
@@ -58,10 +50,6 @@ export function Composer({
       if (isTurnRunning) return;
       if (text.trim() && !disabled) {
         onSend(text.trim());
-        setText('');
-        if (textareaRef.current) {
-          textareaRef.current.style.height = '48px';
-        }
       }
     }
   };
@@ -71,10 +59,6 @@ export function Composer({
       onCancel();
     } else if (text.trim() && !disabled) {
       onSend(text.trim());
-      setText('');
-      if (textareaRef.current) {
-        textareaRef.current.style.height = '48px';
-      }
     }
   };
 
@@ -85,7 +69,7 @@ export function Composer({
           ref={textareaRef}
           className="composer-textarea"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={disabled ? '请先选择或连接项目...' : placeholder}
           aria-label="消息或任务"
