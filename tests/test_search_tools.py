@@ -36,6 +36,28 @@ async def test_grep_content_finds_match(tree: Path):
     assert "node_modules" not in out
 
 
+@pytest.mark.skipif(shutil.which("rg") is None, reason="requires ripgrep")
+@pytest.mark.parametrize("search_file", [False, True])
+@pytest.mark.parametrize("context", [0, 1])
+async def test_grep_preserves_absolute_paths_in_content(tmp_path: Path, search_file: bool, context: int):
+    root = tmp_path.resolve()
+    source = root / "config.py"
+    contents = [
+        f"# source: {source}; sibling: {root}-backup",
+        f'CACHE_DIR = "{root}/cache"; SOURCE = "{source}"',
+        f"# workspace: {root}",
+    ]
+    source.write_text("\n".join(contents) + "\n")
+    tool = GrepTool(workspace=root, allowed_dir=root)
+
+    out = await tool.execute(pattern="CACHE_DIR", path="config.py" if search_file else ".", context=context)
+
+    expected = [f"config.py:2:{contents[1]}"]
+    if context:
+        expected = [f"config.py-1-{contents[0]}", *expected, f"config.py-3-{contents[2]}"]
+    assert out == "\n".join(expected)
+
+
 async def test_grep_no_match(tree: Path):
     tool = GrepTool(workspace=tree, allowed_dir=tree)
     out = await tool.execute(pattern=r"zzz_nonexistent")

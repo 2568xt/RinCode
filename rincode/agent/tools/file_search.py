@@ -233,10 +233,10 @@ class GrepTool(_FsTool):
 
         text = out.decode("utf-8", "replace")
         # 将路径转成搜索根目录的相对路径，使输出紧凑易读。rg 使用正斜杠路径；
-        # 移除搜索根前缀时使用相同格式，保证 Windows 上也能正常处理。
+        # 只转换行首路径，保留正文和上下文中的绝对路径。rg 使用正斜杠路径。
         base_str = str(base).replace(os.sep, "/")
-        text = text.replace(base_str + "/", "").replace(base_str, base.name or ".")
-        lines = [ln for ln in text.splitlines() if ln]
+        prefix, replacement = (base_str + "/", "") if base.is_dir() else (base_str, base.name)
+        lines = [replacement + ln[len(prefix) :] if ln.startswith(prefix) else ln for ln in text.splitlines() if ln]
         if not lines:
             return "No matches found."
 
