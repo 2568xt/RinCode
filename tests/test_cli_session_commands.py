@@ -479,7 +479,9 @@ def test_sessions_missing_config_fails_without_creating_state(tmp_path: Path, mo
     assert not (tmp_path / "home").exists()
 
 
-@pytest.mark.parametrize("command", [["create"], ["create", "--title", "New"], ["resume", "source"], ["fork", "source"]])
+@pytest.mark.parametrize(
+    "command", [["create"], ["create", "--title", "New"], ["resume", "source"], ["fork", "source"]]
+)
 def test_session_run_hints_preserve_and_quote_overrides(tmp_path: Path, monkeypatch, command: list[str]) -> None:
     from shlex import split
 
@@ -497,7 +499,7 @@ def test_session_run_hints_preserve_and_quote_overrides(tmp_path: Path, monkeypa
     result = runner.invoke(app, ["sessions", "-w", str(workspace), "--config", str(config), *command])
     assert result.exit_code == 0, result.output
     hint = next(line for line in result.stdout.splitlines() if "rincode run --session" in line)
-    args = split(hint[hint.index("rincode run --session"):].removesuffix(")"))
+    args = split(hint[hint.index("rincode run --session") :].removesuffix(")"))
     assert args[:3] == ["rincode", "run", "--session"]
     assert args[3].startswith("cli:")
     assert args[4:] == ["--workspace", str(workspace), "--config", str(config)]

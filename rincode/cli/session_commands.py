@@ -47,7 +47,9 @@ _CLI_CHANNEL = "cli"
 @session_app.callback()
 def _suppress_info_logs(
     ctx: typer.Context,
-    workspace: str | None = typer.Option(None, "--workspace", "-w", help="Workspace directory (same as run --workspace)"),
+    workspace: str | None = typer.Option(
+        None, "--workspace", "-w", help="Workspace directory (same as run --workspace)"
+    ),
     config: str | None = typer.Option(None, "--config", help="Config file path"),
 ) -> None:
     mute_subsystem_logs_unless_debug()
