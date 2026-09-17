@@ -404,3 +404,102 @@ def test_export_write_failure_exits_cleanly(patched_workspace: Path, manager: Se
     r = runner.invoke(session_app, ["export", cid, "--output", str(dest)])
     assert r.exit_code != 0
     assert r.exception is None or isinstance(r.exception, SystemExit)
+
+
+@pytest.mark.parametrize("flag", ["--workspace", "-w"])
+def test_sessions_explicit_workspace_matches_run_state(tmp_path: Path, monkeypatch, flag: str) -> None:
+    from rincode.config.paths import resolve_foreground_paths
+    from rincode.config.schema import Config
+
+    project = tmp_path / "project"
+    project.mkdir()
+    monkeypatch.chdir(project)
+    monkeypatch.setenv("RINCODE_HOME", str(tmp_path / "home"))
+    monkeypatch.setattr("rincode.config.loader._current_config_path", None)
+    state = resolve_foreground_paths(Config(), workspace=str(project)).state
+    manager = SessionManager(state)
+    session = manager.get_or_create("cli:explicit-workspace")
+    session.add_message("user", "Inspect this repository")
+    manager.save(session)
+
+    listed = runner.invoke(app, ["sessions", flag, str(project), "list"])
+    assert listed.exit_code == 0, listed.output
+    assert "explicit-workspace" in listed.stdout
+    resumed = runner.invoke(app, ["sessions", flag, str(project), "resume", "explicit-workspace"])
+    assert resumed.exit_code == 0, resumed.output
+    assert "cli:explicit-workspace" in resumed.stdout
+    exported = tmp_path / "export.json"
+    result = runner.invoke(app, ["sessions", flag, str(project), "export", "explicit-workspace", "-o", str(exported)])
+    assert result.exit_code == 0, result.output
+    assert exported.exists()
+
+    default_list = runner.invoke(app, ["sessions", "list"])
+    assert default_list.exit_code == 0
+    assert "No sessions found" in default_list.stdout
+
+
+def test_sessions_config_override_is_scoped_and_workspace_takes_precedence(tmp_path: Path, monkeypatch) -> None:
+    import json
+
+    from rincode.config.loader import get_config_path
+
+    monkeypatch.setenv("RINCODE_HOME", str(tmp_path / "home"))
+    monkeypatch.setattr("rincode.config.loader._current_config_path", None)
+    monkeypatch.chdir(tmp_path)
+    configured = tmp_path / "configured"
+    explicit = tmp_path / "explicit"
+    for workspace, key in ((configured, "cli:configured"), (explicit, "cli:explicit")):
+        manager = SessionManager(workspace)
+        session = manager.get_or_create(key)
+        session.add_message("user", "Inspect this repository")
+        manager.save(session)
+    config = tmp_path / "custom.json"
+    config.write_text(json.dumps({"agents": {"defaults": {"workspace": str(configured)}}}))
+    original_config = get_config_path()
+
+    result = runner.invoke(app, ["sessions", "--config", str(config), "list"])
+    assert result.exit_code == 0, result.output
+    assert "configured" in result.stdout
+    assert get_config_path() == original_config
+    overridden = runner.invoke(app, ["sessions", "--config", str(config), "-w", str(explicit), "list"])
+    assert overridden.exit_code == 0, overridden.output
+    assert "explicit" in overridden.stdout
+    assert "configured" not in overridden.stdout
+    default_list = runner.invoke(app, ["sessions", "list"])
+    assert default_list.exit_code == 0
+    assert "No sessions found" in default_list.stdout
+    assert get_config_path() == original_config
+
+
+def test_sessions_missing_config_fails_without_creating_state(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RINCODE_HOME", str(tmp_path / "home"))
+    result = runner.invoke(app, ["sessions", "--config", str(tmp_path / "missing.json"), "list"])
+    assert result.exit_code == 1, result.output
+    assert "Config file not found" in result.stdout
+    assert not (tmp_path / "home").exists()
+
+
+@pytest.mark.parametrize(
+    "command", [["create"], ["create", "--title", "New"], ["resume", "source"], ["fork", "source"]]
+)
+def test_session_run_hints_preserve_and_quote_overrides(tmp_path: Path, monkeypatch, command: list[str]) -> None:
+    from shlex import split
+
+    from rich.console import Console
+
+    monkeypatch.setattr("rincode.cli.session_commands.console", Console(width=1000))
+    workspace = tmp_path / "repo with spaces"
+    config = tmp_path / "custom config.json"
+    config.write_text("{}")
+    manager = SessionManager(workspace)
+    session = manager.get_or_create("cli:source")
+    session.add_message("user", "Inspect this repository")
+    manager.save(session)
+
+    result = runner.invoke(app, ["sessions", "-w", str(workspace), "--config", str(config), *command])
+    assert result.exit_code == 0, result.output
+    hint = next(line for line in result.stdout.splitlines() if "rincode run --session" in line)
+    args = split(hint[hint.index("rincode run --session") :].removesuffix(")"))
+    assert args[:3] == ["rincode", "run", "--session"]
+    assert args[3].startswith("cli:")
+    assert args[4:] == ["--workspace", str(workspace), "--config", str(config)]
