@@ -7,6 +7,7 @@ READ effect，Write/Edit 声明 WRITE；返回值统一为模型可读文本，�
 
 import difflib
 import re
+from bisect import bisect_left
 from pathlib import Path
 from typing import Any
 
@@ -230,9 +231,10 @@ def _find_match(content: str, old_text: str) -> list[tuple[int, int]]:
 class EditFileTool(_FsTool):
     """通过 old_text → new_text 替换编辑文件，并提供受限 whitespace fallback。
 
-    Tool 先保存原文件是否使用 CRLF，再在 LF 视图上调用 `_find_match`。零命中时返回最相似窗口
+    Tool 在 LF 视图上调用 `_find_match`，再将匹配位置映射回原文。零命中时返回最相似窗口
     unified diff；多命中且未设置 ``replace_all`` 时拒绝含糊修改，要求更多 Context。成功后按
-    原 line ending 写回 UTF-8 bytes。它不会用模糊相似度自动替换，fallback 只容忍逐行空白。
+    原文范围替换，未修改部分的混合换行保持不变；新增行采用目标行的换行样式。它不会用模糊
+    相似度自动替换，fallback 只容忍逐行空白。
 
     这是 WRITE effect。``replace_all=True`` 会替换每个匹配 fragment，调用方必须确认范围；
     路径限制和错误处理与其他 `_FsTool` 一致。
@@ -282,8 +284,10 @@ class EditFileTool(_FsTool):
                 return f"Error: File not found: {path}"
 
             raw = fp.read_bytes()
-            uses_crlf = b"\r\n" in raw
-            content = raw.decode("utf-8").replace("\r\n", "\n")
+            original = raw.decode("utf-8")
+            content = original.replace("\r\n", "\n")
+            # LF 视图中的每个 CRLF 位置；此前每个 CRLF 都比原文少一个字符。
+            crlf_offsets = [match.start() - i for i, match in enumerate(re.finditer("\r\n", original))]
             matches = _find_match(content, old_text.replace("\r\n", "\n"))
 
             if not matches:
@@ -298,15 +302,19 @@ class EditFileTool(_FsTool):
             norm_new = new_text.replace("\r\n", "\n")
             parts, cursor = [], 0
             for start, end in matches if replace_all else matches[:1]:
+                start += bisect_left(crlf_offsets, start)
+                end += bisect_left(crlf_offsets, end)
                 # 与 str.replace 一致，从左向右替换，跳过重叠的多行候选。
                 if start < cursor:
                     continue
-                parts.extend((content[cursor:start], norm_new))
+                newline_at = original.find("\n", start)
+                if newline_at == -1:
+                    newline_at = original.rfind("\n", 0, start)
+                newline = "\r\n" if newline_at > 0 and original[newline_at - 1] == "\r" else "\n"
+                parts.extend((original[cursor:start], norm_new.replace("\n", newline)))
                 cursor = end
-            parts.append(content[cursor:])
+            parts.append(original[cursor:])
             new_content = "".join(parts)
-            if uses_crlf:
-                new_content = new_content.replace("\n", "\r\n")
 
             fp.write_bytes(new_content.encode("utf-8"))
             return f"Successfully edited {fp}"
