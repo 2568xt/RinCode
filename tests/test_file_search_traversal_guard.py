@@ -48,5 +48,7 @@ async def test_grep_walk_deadline_short_circuits(tmp_path, monkeypatch):
 
     result = await GrepTool().execute(pattern="needle", path=str(tmp_path))
 
+    assert result.startswith("Error")
+    assert "timed out" in result
     assert "needle" not in result
     assert "a.txt" not in result
