@@ -4,6 +4,14 @@
 
 [快速开始](#快速开始) · [桌面运行](#桌面运行) · [开发与验证](#开发与验证)
 
+## 40 秒认识 RinCode
+
+[![RinCode 宣传片：从一句想法，到下一次提交](https://github.com/2568xt/RinCode/releases/download/promo-2026-09-26/cover.png)](https://github.com/2568xt/RinCode/releases/download/promo-2026-09-26/RinCode-promo-1080p.mp4)
+
+**从一句想法，到下一次提交。** [查看 / 下载宣传片](https://github.com/2568xt/RinCode/releases/download/promo-2026-09-26/RinCode-promo-1080p.mp4) · 40 秒 · 1080p · 原创配乐
+
+<sub>使用真实桌面界面与示例会话，输入和代码执行镜头为动效演示。</sub>
+
 ![RinCode 桌面：项目会话树、对话与 Markdown 表格](docs/desktop/screenshot.png)
 
 <sub>当前桌面界面，使用独立演示项目与示例会话。原创标识与图标见 <a href="docs/brand/README.md">品牌资产</a>。</sub>
