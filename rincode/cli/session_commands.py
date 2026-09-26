@@ -3,6 +3,10 @@
 User-facing "session id" is the bare chat_id (strip "cli:" prefix for
 display; re-prepend internally). Full session key = "cli:<chat_id>".
 
+Workspace/config overrides precede the subcommand, for example:
+``rincode sessions --workspace ./repo --config ./config.json list``.
+They select the same state as ``rincode run`` with those overrides.
+
 Persistence semantics:
 - ``session create`` (bare): mints a new id and prints it. Nothing is
   written to disk — the id materialises on first use (lazy). Note: a
@@ -17,14 +21,16 @@ Persistence semantics:
 from __future__ import annotations
 
 from pathlib import Path
+from shlex import join
 
 import typer
+from click import get_current_context
 from rich.console import Console
 from rich.table import Table
 
 from rincode.cli._log_silence import mute_subsystem_logs_unless_debug
 from rincode.config.loader import load_config
-from rincode.config.paths import resolve_foreground_paths
+from rincode.config.paths import RuntimePaths, resolve_foreground_paths
 from rincode.session.export import default_export_path, verify_export, write_portable_export
 from rincode.session.manager import SessionManager, new_chat_id
 
@@ -39,8 +45,22 @@ _CLI_CHANNEL = "cli"
 
 
 @session_app.callback()
-def _suppress_info_logs() -> None:
+def _suppress_info_logs(
+    ctx: typer.Context,
+    workspace: str | None = typer.Option(
+        None, "--workspace", "-w", help="Workspace directory (same as run --workspace)"
+    ),
+    config: str | None = typer.Option(None, "--config", help="Config file path"),
+) -> None:
     mute_subsystem_logs_unless_debug()
+    if workspace is not None or config is not None:
+        config_path = Path(config).expanduser().resolve() if config else None
+        if config_path is not None and not config_path.exists():
+            console.print(f"[red]Error: Config file not found: {config_path}[/red]")
+            raise typer.Exit(1)
+        # Session commands only need the resolved state path. Keep overrides on
+        # this invocation's context without changing the process-wide config.
+        ctx.obj = resolve_foreground_paths(load_config(config_path), workspace=workspace)
 
 
 def _open_manager() -> SessionManager:
@@ -48,6 +68,10 @@ def _open_manager() -> SessionManager:
 
 
 def _active_session_state() -> Path:
+    ctx = get_current_context(silent=True)
+    paths = ctx.find_object(RuntimePaths) if ctx is not None else None
+    if paths is not None:
+        return paths.state
     return resolve_foreground_paths(load_config()).state
 
 
@@ -59,6 +83,19 @@ def _full_key(bare_or_key: str) -> str:
     if ":" in bare_or_key:
         return bare_or_key
     return f"{_CLI_CHANNEL}:{bare_or_key}"
+
+
+def _run_command(key: str) -> str:
+    args = ["rincode", "run", "--session", key]
+    ctx = get_current_context(silent=True)
+    while ctx is not None:
+        if "workspace" in ctx.params and "config" in ctx.params:
+            for name in ("workspace", "config"):
+                if ctx.params[name] is not None:
+                    args.extend([f"--{name}", ctx.params[name]])
+            break
+        ctx = ctx.parent
+    return join(args)
 
 
 def resolve_session(manager: SessionManager, id_or_prefix: str) -> str:
@@ -135,10 +172,10 @@ def session_create(
         session.metadata["title"] = title
         manager.save(session)
         console.print(f"[green]✓[/green] Created session [cyan]{chat_id}[/cyan] (title: {title!r})")
-        console.print(f"  Use with: rincode run --session {key}")
+        console.print(f"  Use with: {_run_command(key)}")
     else:
         console.print(chat_id)
-        console.print(f"[dim]  (lazy — materialises on first use: rincode run --session {key})[/dim]")
+        console.print(f"[dim]  (lazy — materialises on first use: {_run_command(key)})[/dim]")
 
 
 # ── 列表 ──────────────────────────────────────────────────────────────
@@ -206,7 +243,7 @@ def session_resume(
     manager = _open_manager()
     key = resolve_session(manager, id_or_prefix)
     console.print(key)
-    console.print(f"[dim]  Use with: rincode run --session {key}[/dim]")
+    console.print(f"[dim]  Use with: {_run_command(key)}[/dim]")
 
 
 # ── 删除 ──────────────────────────────────────────────────────────────
@@ -254,7 +291,7 @@ def session_fork(
 
     child_bare = _bare_id(child.key)
     console.print(child_bare)
-    console.print(f"[dim]  (forked from {_bare_id(key)}; use: rincode run --session {child.key})[/dim]")
+    console.print(f"[dim]  (forked from {_bare_id(key)}; use: {_run_command(child.key)})[/dim]")
 
 
 # ── 导出 ──────────────────────────────────────────────────────────────
